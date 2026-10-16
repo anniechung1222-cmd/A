@@ -17,14 +17,14 @@ st.set_page_config(
 )
 
 # ==========================================
-# 2. 全台資服族群完整對照表 (含 IPO/興櫃新星)
+# 2. 全台資服族群對照表 (含 IPO/興櫃新星)
 # ==========================================
 STOCKS_BY_MARKET = {
     "興櫃/創新板/IPO新星": {
         "6902.TWO": "走著瞧-創 (Gogolook/AI資安)",
         "6914.TWO": "意藍 (社群大數據/AI文字分析)",
         "7701.TWO": "昕力資訊 (API管理/AI資服)",
-        "7730.TWO": "核心智識 (公部门AI/知識庫)",
+        "7730.TWO": "核心智識 (公部門AI/知識庫)",
         "6906.TWO": "現觀科技 (電信大數據/AI)"
     },
     "上市資服": {
@@ -57,7 +57,7 @@ STOCKS_BY_MARKET = {
 }
 
 # ==========================================
-# 3. 高質感 CSS 樣式注入 (Custom CSS)
+# 3. 高質感 CSS 樣式注入
 # ==========================================
 st.markdown("""
 <style>
@@ -113,7 +113,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 4. 側邊欄控制台 (Sidebar)
+# 4. 側邊欄控制台
 # ==========================================
 st.sidebar.title("🎛️ 觀測站控制台")
 st.sidebar.caption(f"📅 更新時間：{datetime.now().strftime('%Y-%m-%d %H:%M')}")
@@ -139,7 +139,7 @@ budget_range = st.sidebar.slider(
 )
 
 st.sidebar.markdown("---")
-st.sidebar.success("🟢 自動排程：每日 09:00 AM 推播 IPO 與晨報")
+st.sidebar.success("🟢 自動排程：每日 09:00 AM 推播晨報")
 
 # ==========================================
 # 5. 主頁 Header & Metrics
@@ -173,9 +173,7 @@ tab1, tab2, tab3, tab4 = st.tabs([
     "🌐 國際財經 & 資服焦點新聞"
 ])
 
-# ------------------------------------------
 # TAB 1: K線 + 成交量 + RSI 指標
-# ------------------------------------------
 with tab1:
     stock_name = stock_options[selected_ticker]
     st.subheader(f"📊 {selected_ticker.split('.')} {stock_name} 技術面診斷")
@@ -248,15 +246,11 @@ with tab1:
     except Exception as e:
         st.error(f"無法取得該股票數據：{e}")
 
-# ------------------------------------------
-# TAB 2: 資服 IPO 與興櫃新星專區 (NEW!)
-# ------------------------------------------
+# TAB 2: 資服 IPO 與興櫃新星專區
 with tab2:
     st.subheader("🚀 國內資服業 IPO、創新板與興櫃潛力股追蹤")
     
-    st.markdown("""
-    此專區監控具備 **AI 應用、大數據分析、雲端資安與數位轉型** 核心技術之興櫃與創新規劃公司：
-    """)
+    st.markdown("此專區監控具備 **AI 應用、大數據分析、雲端資安與數位轉型** 核心技術之興櫃與創新規劃公司：")
     
     ipo_df = pd.DataFrame({
         "股票代碼": ["6902.TWO", "6914.TWO", "7701.TWO", "7730.TWO", "6906.TWO"],
@@ -273,7 +267,6 @@ with tab2:
     })
     
     st.dataframe(ipo_df, use_container_width=True)
-    
     st.markdown("---")
     st.markdown("##### 📰 最新資服業 IPO 與公開發行動態")
     
@@ -299,9 +292,7 @@ with tab2:
         </div>
         """, unsafe_allow_html=True)
 
-# ------------------------------------------
 # TAB 3: 公部門標案情報
-# ------------------------------------------
 with tab3:
     st.subheader("🏛️ 政府電子採購網招標與共同供應契約")
     
@@ -335,9 +326,7 @@ with tab3:
         fig_pie.update_layout(margin=dict(l=10, r=10, t=10, b=10), height=260)
         st.plotly_chart(fig_pie, use_container_width=True)
 
-# ------------------------------------------
 # TAB 4: 焦點要聞
-# ------------------------------------------
 with tab4:
     st.subheader("📰 每日國際財經與資服焦點新聞")
     n1, n2 = st.columns(2)
