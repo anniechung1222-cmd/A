@@ -5,7 +5,7 @@ import yfinance as yf
 from bs4 import BeautifulSoup
 from datetime import datetime
 
-# 1. 抓取財經與資服新聞
+# 1. 抓取新聞
 def fetch_news():
     news_items = []
     rss_sources = [
@@ -21,27 +21,49 @@ def fetch_news():
             news_items.append(f"• [{category}] 抓取失敗: {e}")
     return "\n\n".join(news_items)
 
-# 2. 抓取資服股技術面
+# 2. 評估全台資服族群行情 (上市/上櫃/興櫃)
 def fetch_stocks():
-    stocks = {"6214.TW": "精誠", "3029.TW": "零壹", "2480.TW": "敦陽科", "4953.TWO": "緯軟"}
-    reports = []
+    stocks = {
+        "6214.TW": "精誠", "3029.TW": "零壹", "2480.TW": "敦陽科", 
+        "4953.TWO": "緯軟", "6689.TW": "伊雲谷", "6183.TW": "邁達特",
+        "2453.TW": "凌群", "2471.TW": "資通", "6741.TWO": "宏碁資訊",
+        "6690.TWO": "安碁資訊", "6752.TWO": "叡揚", "6914.TWO": "意藍",
+        "6902.TWO": "走著瞧", "6865.TWO": "偉康科技"
+    }
+    
+    stock_results = []
     for ticker, name in stocks.items():
         try:
             stock = yf.Ticker(ticker)
-            hist = stock.history(period="1mo")
+            hist = stock.history(period="5d")
             if len(hist) >= 2:
                 price = hist['Close'].iloc[-1]
                 prev = hist['Close'].iloc[-2]
                 pct = ((price - prev) / prev) * 100
-                ma5 = hist['Close'].tail(5).mean()
-                ma20 = hist['Close'].tail(20).mean()
-                status = "📈 多頭" if price > ma5 and ma5 > ma20 else ("📉 空頭" if price < ma5 and ma5 < ma20 else "➖ 震盪")
-                reports.append(f"• {name}: NT${price:.1f} ({pct:+.2f}%) | 趨勢: {status}")
+                stock_results.append({"name": name, "code": ticker.split('.')[0], "price": price, "pct": pct})
         except Exception:
             pass
-    return "\n".join(reports)
+            
+    if not stock_results:
+        return "• 資服族群數據暫時無法取得"
+        
+    avg_pct = sum(s['pct'] for s in stock_results) / len(stock_results)
+    sorted_stocks = sorted(stock_results, key=lambda x: x['pct'], reverse=True)
+    
+    top_gainers = sorted_stocks[:3]
+    top_losers = sorted_stocks[-3:]
+    
+    gainers_text = "\n".join([f"  🔺 {s['name']} ({s['code']}): NT${s['price']:.1f} ({s['pct']:+.2f}%)" for s in top_gainers])
+    losers_text = "\n".join([f"  🔻 {s['name']} ({s['code']}): NT${s['price']:.1f} ({s['pct']:+.2f}%)" for s in top_losers])
+    
+    return (
+        f"📊 **全台資服族群概況 (評估 {len(stock_results)} 檔)**\n"
+        f"• 族群平均當日漲跌：**{avg_pct:+.2f}%**\n\n"
+        f"🔥 **今日強勢領漲 Top 3**：\n{gainers_text}\n\n"
+        f"❄️ **今日拉回弱勢 Top 3**：\n{losers_text}"
+    )
 
-# 3. 抓取公部門標案
+# 3. 抓取政府標案
 def fetch_tenders():
     keywords = ["網站建置", "軟體開發", "共同供應契約"]
     results = []
@@ -57,7 +79,7 @@ def fetch_tenders():
                     for r in rows:
                         cols = r.find_all('td')
                         if len(cols) >= 3:
-                            results.append(f"• [{kw}] {cols.text.strip()} - {cols.text.strip()}")
+                            results.append(f"• [{kw}] {cols[1].text.strip()} - {cols[2].text.strip()}")
                 else:
                     results.append(f"• [{kw}] 今日尚無新增招標")
         except Exception:
@@ -67,7 +89,7 @@ def fetch_tenders():
 # 4. Telegram 推播
 def send_telegram(token, chat_id, message):
     url = f"https://api.telegram.org/bot{token}/sendMessage"
-    payload = {"chat_id": chat_id, "text": message}
+    payload = {"chat_id": chat_id, "text": message, "parse_mode": "Markdown"}
     requests.post(url, json=payload)
 
 def main():
@@ -77,11 +99,11 @@ def main():
     tenders = fetch_tenders()
     
     report = (
-        f"📊 【每日情報晨報】{today}\n\n"
-        f"🌐 國際財經與資服要事：\n{news}\n\n"
-        f"📈 資服族群行情：\n{stocks}\n\n"
-        f"🏛️ 公部門標案動態：\n{tenders}\n\n"
-        f"💡 請登入您的 Streamlit 儀表板查看完整動態圖表！"
+        f"📊 **【每日情報晨報】{today}**\n\n"
+        f"🌐 **一、國際財經與資服要事**：\n{news}\n\n"
+        f"📈 **二、資服族群行情速報**：\n{stocks}\n\n"
+        f"🏛️ **三、公部門最新標案動態**：\n{tenders}\n\n"
+        f"💡 *進入您的 Streamlit 線上儀表板可查看全台資服股完整 K 線與 RSI 指標！*"
     )
     
     tg_token = os.getenv("TELEGRAM_BOT_TOKEN")
@@ -89,9 +111,9 @@ def main():
     
     if tg_token and tg_chat_id:
         send_telegram(tg_token, tg_chat_id, report)
-        print("✅ Telegram 訊息已發送")
+        print("✅ Telegram 晨報已順利發送！")
     else:
-        print("未設定 Telegram Token，晨報預覽：\n", report)
+        print("未偵測到 Telegram Secrets，報告內容預覽：\n", report)
 
 if __name__ == "__main__":
     main()
