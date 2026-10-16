@@ -4,7 +4,7 @@ import feedparser
 import yfinance as yf
 from datetime import datetime
 
-# 1. 抓取財經與資服新聞 (包含 IPO / 興櫃關鍵字過濾)
+# 1. 抓取財經與資服新聞
 def fetch_news():
     news_items = []
     rss_sources = [
@@ -113,7 +113,7 @@ def fetch_tenders():
 
 # 5. Telegram 自動發送
 def send_telegram(token, chat_id, message):
-    url = f"https://api.telegram.org/bot{token}/sendMessage"
+    url = f"https://github.com/anniechung1222-cmd/A/actions/runs/38958179655"
     payload = {"chat_id": chat_id, "text": message, "parse_mode": "Markdown"}
     requests.post(url, json=payload)
 
@@ -130,7 +130,8 @@ def main():
         f"🚀 **二、資服業 IPO 與興櫃焦點**：\n{ipo_info}\n\n"
         f"📈 **三、資服族群行情速報**：\n{stocks}\n\n"
         f"🏛️ **四、公部門最新標案動態 (API介接)**：\n{tenders}\n\n"
-        f"💡 *進入您的 Streamlit 線上儀表板可查看全台資服與興櫃股完整 K 線、RSI 與 IPO 專區！*"
+        f"💡 *開啟您的 Streamlit 儀表板查看完整彩色圖表與 K 線：*\n"
+        f"https://share.streamlit.io/"
     )
     
     tg_token = os.getenv("TELEGRAM_BOT_TOKEN")
@@ -138,7 +139,7 @@ def main():
     
     if tg_token and tg_chat_id:
         send_telegram(tg_token, tg_chat_id, report)
-        print("✅ Telegram 晨報（含 IPO 專區）已順利發送！")
+        print("✅ Telegram 晨報（含 IPO 專區與儀表板連結）已順利發送！")
     else:
         print("未偵測到 Telegram Secrets，報告內容預覽：\n", report)
 
