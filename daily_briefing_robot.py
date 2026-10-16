@@ -2,10 +2,9 @@ import os
 import requests
 import feedparser
 import yfinance as yf
-from bs4 import BeautifulSoup
 from datetime import datetime
 
-# 1. 抓取新聞
+# 1. 抓取焦點財經與資服新聞
 def fetch_news():
     news_items = []
     rss_sources = [
@@ -21,7 +20,7 @@ def fetch_news():
             news_items.append(f"• [{category}] 抓取失敗: {e}")
     return "\n\n".join(news_items)
 
-# 2. 評估全台資服族群行情 (上市/上櫃/興櫃)
+# 2. 評估全台資服族群行情 (上市 / 上櫃 / 興櫃)
 def fetch_stocks():
     stocks = {
         "6214.TW": "精誠", "3029.TW": "零壹", "2480.TW": "敦陽科", 
@@ -63,30 +62,35 @@ def fetch_stocks():
         f"❄️ **今日拉回弱勢 Top 3**：\n{losers_text}"
     )
 
-# 3. 抓取政府標案
+# 3. 透過 g0v 開放 API 抓取政府電子採購網即時標案
 def fetch_tenders():
     keywords = ["網站建置", "軟體開發", "共同供應契約"]
     results = []
-    headers = {"User-Agent": "Mozilla/5.0"}
+    
     for kw in keywords:
         try:
-            url = f"https://web.pcc.gov.tw/prkms/tender/common/basic/readTenderBasic?keyword={kw}"
-            resp = requests.get(url, headers=headers, timeout=8)
+            url = f"https://pcc.g0v.ronny.tw/api/v1/search?query={kw}"
+            resp = requests.get(url, timeout=10)
+            
             if resp.status_code == 200:
-                soup = BeautifulSoup(resp.text, 'html.parser')
-                rows = soup.find_all('tr', class_='list_row')[:2]
-                if rows:
-                    for r in rows:
-                        cols = r.find_all('td')
-                        if len(cols) >= 3:
-                            results.append(f"• [{kw}] {cols[1].text.strip()} - {cols[2].text.strip()}")
+                data = resp.json()
+                records = data.get("records", [])
+                
+                if records:
+                    for item in records[:2]:
+                        unit = item.get("unit_name", "公部門機關")
+                        title = item.get("brief", {}).get("title", "未具名標案")
+                        results.append(f"• [{kw}] {unit} - {title}")
                 else:
-                    results.append(f"• [{kw}] 今日尚無新增招標")
-        except Exception:
-            results.append(f"• [{kw}] 查詢逾時")
+                    results.append(f"• [{kw}] 近期尚無新增招標案")
+            else:
+                results.append(f"• [{kw}] API 回應異常 (HTTP {resp.status_code})")
+        except Exception as e:
+            results.append(f"• [{kw}] API 連線逾時")
+            
     return "\n".join(results)
 
-# 4. Telegram 推播
+# 4. Telegram 自動發送
 def send_telegram(token, chat_id, message):
     url = f"https://api.telegram.org/bot{token}/sendMessage"
     payload = {"chat_id": chat_id, "text": message, "parse_mode": "Markdown"}
@@ -102,7 +106,7 @@ def main():
         f"📊 **【每日情報晨報】{today}**\n\n"
         f"🌐 **一、國際財經與資服要事**：\n{news}\n\n"
         f"📈 **二、資服族群行情速報**：\n{stocks}\n\n"
-        f"🏛️ **三、公部門最新標案動態**：\n{tenders}\n\n"
+        f"🏛️ **三、公部門最新標案動態 (API介接)**：\n{tenders}\n\n"
         f"💡 *進入您的 Streamlit 線上儀表板可查看全台資服股完整 K 線與 RSI 指標！*"
     )
     
