@@ -10,16 +10,23 @@ from datetime import datetime
 # 1. 頁面基礎設定 (Page Config)
 # ==========================================
 st.set_page_config(
-    page_title="全台資服產業與標案觀測站",
+    page_title="全台資服產業、IPO與標案觀測站",
     page_icon="📈",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
 # ==========================================
-# 2. 全台資服族群完整對照表 (上市/上櫃/興櫃)
+# 2. 全台資服族群完整對照表 (含 IPO/興櫃新星)
 # ==========================================
 STOCKS_BY_MARKET = {
+    "興櫃/創新板/IPO新星": {
+        "6902.TWO": "走著瞧-創 (Gogolook/AI資安)",
+        "6914.TWO": "意藍 (社群大數據/AI文字分析)",
+        "7701.TWO": "昕力資訊 (API管理/AI資服)",
+        "7730.TWO": "核心智識 (公部门AI/知識庫)",
+        "6906.TWO": "現觀科技 (電信大數據/AI)"
+    },
     "上市資服": {
         "2427.TW": "三商電 (系統整合/金融端)",
         "2453.TW": "凌群 (系統整合/資安)",
@@ -46,12 +53,6 @@ STOCKS_BY_MARKET = {
         "6752.TWO": "叡揚 (公文/雲端SaaS)",
         "6865.TWO": "偉康科技 (數位金融/身份認證)",
         "6874.TWO": "倍力 (軟體代理/碳盤查)"
-    },
-    "興櫃/創新板資服": {
-        "6902.TWO": "走著瞧-創 (Gogolook/AI資安)",
-        "6914.TWO": "意藍 (社群大數據分析)",
-        "7701.TWO": "昕力資訊 (API管理/AI資服)",
-        "7730.TWO": "核心智識 (公部門AI/知識庫)"
     }
 }
 
@@ -97,6 +98,14 @@ st.markdown("""
         padding: 2px 8px;
         border-radius: 4px;
     }
+    .ipo-tag {
+        background-color: #FEF3C7;
+        color: #D97706;
+        font-size: 0.75rem;
+        font-weight: 700;
+        padding: 2px 8px;
+        border-radius: 4px;
+    }
     .news-title { font-size: 1rem; font-weight: 700; color: #1E293B; margin-top: 6px; }
     [data-testid="stSidebar"] { background-color: #0F172A; }
     [data-testid="stSidebar"] * { color: #F1F5F9 !important; }
@@ -109,9 +118,8 @@ st.markdown("""
 st.sidebar.title("🎛️ 觀測站控制台")
 st.sidebar.caption(f"📅 更新時間：{datetime.now().strftime('%Y-%m-%d %H:%M')}")
 
-market_category = st.sidebar.radio("市場別分類", ["全部類股", "上市資服", "上櫃資服", "興櫃/創新板資服"])
+market_category = st.sidebar.radio("市場別分類", ["興櫃/創新板/IPO新星", "上市資服", "上櫃資服", "全部類股"])
 
-# 組合股票清單
 if market_category == "全部類股":
     stock_options = {}
     for cat in STOCKS_BY_MARKET.values():
@@ -122,7 +130,7 @@ else:
 selected_ticker = st.sidebar.selectbox(
     "📌 選擇關注標的",
     options=list(stock_options.keys()),
-    format_func=lambda x: f"{x.split('.')[0]} {stock_options[x]}"
+    format_func=lambda x: f"{x.split('.')} {stock_options[x]}"
 )
 
 budget_range = st.sidebar.slider(
@@ -131,15 +139,15 @@ budget_range = st.sidebar.slider(
 )
 
 st.sidebar.markdown("---")
-st.sidebar.success("🟢 自動排程：每日 09:00 AM 推播晨報")
+st.sidebar.success("🟢 自動排程：每日 09:00 AM 推播 IPO 與晨報")
 
 # ==========================================
 # 5. 主頁 Header & Metrics
 # ==========================================
 st.markdown(f"""
 <div class="header-banner">
-    <div class="header-title">📊 全台資服產業、股市行情與政府標案儀表板</div>
-    <div class="header-subtitle">涵蓋上市、上櫃與興櫃資訊服務族群，即時監控 K 線、均線、RSI 指標與採購網標案動態</div>
+    <div class="header-title">📊 全台資服產業、IPO興櫃新星與標案儀表板</div>
+    <div class="header-subtitle">包含興櫃登錄、創新板、上市櫃資服族群，即時監控 K 線、RSI 指標、IPO 動態與政府標案</div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -147,19 +155,20 @@ c1, c2, c3, c4 = st.columns(4)
 with c1:
     st.markdown('<div class="metric-card"><div class="metric-label">加權指數 (TAIEX)</div><div class="metric-value">23,450.2</div><div class="change-up">▲ +185.3 (+0.80%)</div></div>', unsafe_allow_html=True)
 with c2:
-    st.markdown('<div class="metric-card"><div class="metric-label">資服族群追蹤數</div><div class="metric-value">27 檔</div><div class="change-up">涵蓋上市/上櫃/興櫃</div></div>', unsafe_allow_html=True)
+    st.markdown('<div class="metric-card"><div class="metric-label">資服追蹤檔數</div><div class="metric-value">28 檔</div><div class="change-up">含 5 檔 IPO/興櫃新星</div></div>', unsafe_allow_html=True)
 with c3:
     st.markdown('<div class="metric-card"><div class="metric-label">今日公部門標案</div><div class="metric-value">14 件</div><div class="change-up">▲ 新增 3 件</div></div>', unsafe_allow_html=True)
 with c4:
-    st.markdown('<div class="metric-card"><div class="metric-label">共契採購招標案</div><div class="metric-value">5 件</div><div style="color:#2563EB; font-weight:700; font-size:0.85rem;">預算共 1.2 億</div></div>', unsafe_allow_html=True)
+    st.markdown('<div class="metric-card"><div class="metric-label">資服 IPO / 興櫃關注</div><div class="metric-value">5 家</div><div style="color:#D97706; font-weight:700; font-size:0.85rem;">軟體/AI/大數據為主</div></div>', unsafe_allow_html=True)
 
 st.markdown("<br>", unsafe_allow_html=True)
 
 # ==========================================
 # 6. 分頁區塊 (Tabs)
 # ==========================================
-tab1, tab2, tab3 = st.tabs([
+tab1, tab2, tab3, tab4 = st.tabs([
     "📈 個股技術分析 (含 RSI)", 
+    "🚀 國內資服 IPO 與興櫃焦點",
     "🏛️ 公部門標案與共契情報", 
     "🌐 國際財經 & 資服焦點新聞"
 ])
@@ -169,14 +178,13 @@ tab1, tab2, tab3 = st.tabs([
 # ------------------------------------------
 with tab1:
     stock_name = stock_options[selected_ticker]
-    st.subheader(f"📊 {selected_ticker.split('.')[0]} {stock_name} 技術面診斷")
+    st.subheader(f"📊 {selected_ticker.split('.')} {stock_name} 技術面診斷")
     
     try:
         stock = yf.Ticker(selected_ticker)
         df = stock.history(period="3mo")
         
         if not df.empty:
-            # 技術指標計算 (MA5, MA20, RSI)
             df['MA5'] = df['Close'].rolling(window=5).mean()
             df['MA20'] = df['Close'].rolling(window=20).mean()
             
@@ -186,7 +194,6 @@ with tab1:
             rs = gain / loss
             df['RSI'] = 100 - (100 / (1 + rs))
             
-            # 三圖合一（K線 / 成交量 / RSI）
             fig = make_subplots(
                 rows=3, cols=1, 
                 shared_xaxes=True, 
@@ -194,7 +201,6 @@ with tab1:
                 row_heights=[0.55, 0.20, 0.25]
             )
             
-            # 1. K線圖
             fig.add_trace(go.Candlestick(
                 x=df.index, open=df['Open'], high=df['High'], low=df['Low'], close=df['Close'],
                 name="K線", increasing_line_color='#DC2626', decreasing_line_color='#16A34A'
@@ -202,26 +208,21 @@ with tab1:
             fig.add_trace(go.Scatter(x=df.index, y=df['MA5'], line=dict(color='#F59E0B', width=1.5), name="5MA"), row=1, col=1)
             fig.add_trace(go.Scatter(x=df.index, y=df['MA20'], line=dict(color='#2563EB', width=1.5), name="20MA"), row=1, col=1)
             
-            # 2. 成交量
             colors = ['#DC2626' if c >= o else '#16A34A' for c, o in zip(df['Close'], df['Open'])]
             fig.add_trace(go.Bar(x=df.index, y=df['Volume'], marker_color=colors, name="成交量"), row=2, col=1)
             
-            # 3. RSI 指標
             fig.add_trace(go.Scatter(x=df.index, y=df['RSI'], line=dict(color='#8B5CF6', width=1.5), name="14日 RSI"), row=3, col=1)
             fig.add_hline(y=70, line_dash="dash", line_color="red", row=3, col=1)
             fig.add_hline(y=30, line_dash="dash", line_color="green", row=3, col=1)
             
             fig.update_layout(
-                xaxis_rangeslider_visible=False,
-                height=550,
-                margin=dict(l=20, r=20, t=20, b=20),
-                template="plotly_white",
+                xaxis_rangeslider_visible=False, height=550,
+                margin=dict(l=20, r=20, t=20, b=20), template="plotly_white",
                 legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
             )
             
             st.plotly_chart(fig, use_container_width=True)
             
-            # AI 技術評語卡片
             latest_close = df['Close'].iloc[-1]
             latest_ma5 = df['MA5'].iloc[-1]
             latest_ma20 = df['MA20'].iloc[-1]
@@ -230,7 +231,6 @@ with tab1:
             with st.container(border=True):
                 st.markdown("##### 🤖 短期技術面即時評語")
                 col_diag1, col_diag2 = st.columns(2)
-                
                 with col_diag1:
                     if latest_close > latest_ma5 and latest_ma5 > latest_ma20:
                         st.success(f"🟢 **均線多頭排列**：最新收盤價 NT${latest_close:.1f} 站穩 5MA 與 20MA，動能強勁。")
@@ -238,7 +238,6 @@ with tab1:
                         st.error(f"🔴 **均線空頭格局**：股價位於均線下方，宜關注 20MA 支撐力道。")
                     else:
                         st.warning(f"🟡 **高檔整理區間**：股價於均線間震盪，等待成交量帶頭突破。")
-                        
                 with col_diag2:
                     if latest_rsi > 70:
                         st.error(f"🔴 **RSI ({latest_rsi:.1f}) > 70 (超買)**：短線漲幅較急，留意短線拉回風險。")
@@ -250,9 +249,60 @@ with tab1:
         st.error(f"無法取得該股票數據：{e}")
 
 # ------------------------------------------
-# TAB 2: 公部門標案情報
+# TAB 2: 資服 IPO 與興櫃新星專區 (NEW!)
 # ------------------------------------------
 with tab2:
+    st.subheader("🚀 國內資服業 IPO、創新板與興櫃潛力股追蹤")
+    
+    st.markdown("""
+    此專區監控具備 **AI 應用、大數據分析、雲端資安與數位轉型** 核心技術之興櫃與創新規劃公司：
+    """)
+    
+    ipo_df = pd.DataFrame({
+        "股票代碼": ["6902.TWO", "6914.TWO", "7701.TWO", "7730.TWO", "6906.TWO"],
+        "公司名稱": ["Gogolook (走著瞧)", "意藍資訊", "昕力資訊", "核心智識", "現觀科技"],
+        "核心業務 / 產品": [
+            "Whoscall 信任科技 / 防詐 AI 數據庫",
+            "OpView 社群大數據 / 意藍 LLM 語意分析",
+            "DigiRunner API 管理 / 金融 AI 微服務",
+            "公部門 AI 知識庫管理 / 文件自動化檢索",
+            "電信大數據分析 / 行動網路優化 AI 平台"
+        ],
+        "掛牌市場": ["創新板 (轉上市中)", "興櫃", "興櫃", "興櫃", "上市 (新掛牌)"],
+        "IPO / 轉上市狀態": ["已登錄創新板 / 規劃轉主板", "興櫃交易中", "興櫃交易中", "興櫃輔導中", "已成功上市"]
+    })
+    
+    st.dataframe(ipo_df, use_container_width=True)
+    
+    st.markdown("---")
+    st.markdown("##### 📰 最新資服業 IPO 與公開發行動態")
+    
+    col_ipo1, col_ipo2 = st.columns(2)
+    with col_ipo1:
+        st.markdown("""
+        <div class="news-card">
+            <span class="ipo-tag">IPO 輔導</span>
+            <div class="news-title">新創 AI 軟體業者啟動 IPO 輔導，擬申請創新板掛牌</div>
+            <p style="font-size:0.88rem; color:#475569; margin-top:6px;">
+            主打企業級 RAG 知識庫與生成式 AI 微調服務，受惠金融與公部門轉型需求，近兩年營收成長逾 40%。
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+    with col_ipo2:
+        st.markdown("""
+        <div class="news-card">
+            <span class="ipo-tag">興櫃轉上市</span>
+            <div class="news-title">資安與大數據服務商遞件申請興櫃轉主板上市</div>
+            <p style="font-size:0.88rem; color:#475569; margin-top:6px;">
+            證交所審議通過多檔科技創新股上市案，資服產業群聚效應在台灣資本市場逐漸形成。
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+
+# ------------------------------------------
+# TAB 3: 公部門標案情報
+# ------------------------------------------
+with tab3:
     st.subheader("🏛️ 政府電子採購網招標與共同供應契約")
     
     tender_data = pd.DataFrame({
@@ -265,19 +315,19 @@ with tab2:
             "115-116年財政雲端資料庫系統共同供應契約案",
             "市民服務大平臺系統升級與資安防護調整"
         ],
-        "預算金額 (萬元)": [1200, 450, 800, 3500, 280],
+        "預算金額 (萬元)":,
         "類別": ["網站建置", "軟體開發", "系統維護", "共同供應契約", "資安/軟體"],
         "截止投標日": ["2026-11-02", "2026-10-30", "2026-11-10", "2026-11-15", "2026-10-28"]
     })
     
     filtered_df = tender_data[
-        (tender_data["預算金額 (萬元)"] >= budget_range[0]) & 
-        (tender_data["預算金額 (萬元)"] <= budget_range[1])
+        (tender_data["預算金額 (萬元)"] >= budget_range) & 
+        (tender_data["預算金額 (萬元)"] <= budget_range)
     ]
     
     col_t1, col_t2 = st.columns([0.6, 0.4])
     with col_t1:
-        st.markdown(f"**篩選結果（預算 {budget_range[0]} 萬 ~ {budget_range[1]} 萬元）**")
+        st.markdown(f"**篩選結果（預算 {budget_range} 萬 ~ {budget_range} 萬元）**")
         st.dataframe(filtered_df, use_container_width=True)
     with col_t2:
         st.markdown("**📊 標案類別金額統計**")
@@ -286,9 +336,9 @@ with tab2:
         st.plotly_chart(fig_pie, use_container_width=True)
 
 # ------------------------------------------
-# TAB 3: 焦點要聞
+# TAB 4: 焦點要聞
 # ------------------------------------------
-with tab3:
+with tab4:
     st.subheader("📰 每日國際財經與資服焦點新聞")
     n1, n2 = st.columns(2)
     with n1:
@@ -298,11 +348,6 @@ with tab3:
             <div class="news-title">美聯儲降息預期升高，科技股強勢反彈</div>
             <p style="font-size:0.88rem; color:#475569; margin-top:6px;">通膨數據降溫，美股四大指數集體上揚，帶動全球科技股與資服板塊走強。</p>
         </div>
-        <div class="news-card">
-            <span class="news-tag">雲端架構</span>
-            <div class="news-title">全球 CSP 巨頭擴大資本支出，雲端搬遷需求強勁</div>
-            <p style="font-size:0.88rem; color:#475569; margin-top:6px;">Microsoft 與 AWS 加碼資料中心建置，國內代理商與系統整合商訂單能見度高。</p>
-        </div>
         """, unsafe_allow_html=True)
     with n2:
         st.markdown("""
@@ -310,10 +355,5 @@ with tab3:
             <span class="news-tag" style="background:#FEF3C7; color:#D97706;">國內資服</span>
             <div class="news-title">資服龍頭營收創同期新高，資安與 AI 為雙核心引擎</div>
             <p style="font-size:0.88rem; color:#475569; margin-top:6px;">企業數位轉型需求熱絡，金融與製造業資安升級帶動第三季營利成長。</p>
-        </div>
-        <div class="news-card">
-            <span class="news-tag" style="background:#FEF3C7; color:#D97706;">IPO / 興櫃</span>
-            <div class="news-title">新創 AI 資服軟體商預計 Q4 登錄興櫃</div>
-            <p style="font-size:0.88rem; color:#475569; margin-top:6px;">主打企業級 RAG 知識庫與 LLM 微調服務，已取得多家公部門與金融試行標案。</p>
         </div>
         """, unsafe_allow_html=True)
