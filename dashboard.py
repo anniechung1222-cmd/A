@@ -130,12 +130,12 @@ else:
 selected_ticker = st.sidebar.selectbox(
     "📌 選擇關注標的",
     options=list(stock_options.keys()),
-    format_func=lambda x: f"{x.split('.')} {stock_options[x]}"
+    format_func=lambda x: f"{x.split('.')[0]} {stock_options[x]}"
 )
 
 budget_range = st.sidebar.slider(
     "🏛️ 標案預算篩選 (萬元)",
-    min_value=50, max_value=5000, value=(100, 3000), step=50
+    min_value=50, max_value=15000, value=(50, 15000), step=50
 )
 
 st.sidebar.markdown("---")
@@ -176,7 +176,7 @@ tab1, tab2, tab3, tab4 = st.tabs([
 # TAB 1: K線 + 成交量 + RSI 指標
 with tab1:
     stock_name = stock_options[selected_ticker]
-    st.subheader(f"📊 {selected_ticker.split('.')} {stock_name} 技術面診斷")
+    st.subheader(f"📊 {selected_ticker.split('.')[0]} {stock_name} 技術面診斷")
     
     try:
         stock = yf.Ticker(selected_ticker)
@@ -306,19 +306,19 @@ with tab3:
             "115-116年財政雲端資料庫系統共同供應契約案",
             "市民服務大平臺系統升級與資安防護調整"
         ],
-        "預算金額 (萬元)":,
+        "預算金額 (萬元)": [1200, 850, 450, 12000, 320],
         "類別": ["網站建置", "軟體開發", "系統維護", "共同供應契約", "資安/軟體"],
         "截止投標日": ["2026-11-02", "2026-10-30", "2026-11-10", "2026-11-15", "2026-10-28"]
     })
     
     filtered_df = tender_data[
-        (tender_data["預算金額 (萬元)"] >= budget_range) & 
-        (tender_data["預算金額 (萬元)"] <= budget_range)
+        (tender_data["預算金額 (萬元)"] >= budget_range[0]) & 
+        (tender_data["預算金額 (萬元)"] <= budget_range[1])
     ]
     
     col_t1, col_t2 = st.columns([0.6, 0.4])
     with col_t1:
-        st.markdown(f"**篩選結果（預算 {budget_range} 萬 ~ {budget_range} 萬元）**")
+        st.markdown(f"**篩選結果（預算 {budget_range[0]} 萬 ~ {budget_range[1]} 萬元）**")
         st.dataframe(filtered_df, use_container_width=True)
     with col_t2:
         st.markdown("**📊 標案類別金額統計**")
