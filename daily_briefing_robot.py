@@ -24,7 +24,7 @@ def fetch_news():
         return "• 暫無最新新聞"
     return "\n\n".join(news_items)
 
-# 2. 評估全台資服族群行情
+# 2. 評估全台資服族群行情 (含資拓宏宇 7738)
 def fetch_stocks():
     stocks = {
         "6214.TW": "精誠", "3029.TW": "零壹", "2480.TW": "敦陽科", 
@@ -42,7 +42,7 @@ def fetch_stocks():
                 price = float(hist['Close'].iloc[-1])
                 prev = float(hist['Close'].iloc[-2])
                 pct = ((price - prev) / prev) * 100
-                code_number = ticker.split('.')
+                code_number = ticker.split('.')[0]
                 stock_results.append({
                     "name": name, 
                     "code": code_number, 
@@ -93,12 +93,11 @@ def fetch_ipo_news():
     except Exception:
         return "• IPO 訊息抓取中"
 
-# 4. 透過 g0v 開放 API 抓取政府電子採購網即時標案 (加入 User-Agent 解決 HTTP 403)
+# 4. 透過 g0v 開放 API 抓取政府電子採購網即時標案 (含 Header 解決 HTTP 403)
 def fetch_tenders():
     keywords = ["網站建置", "軟體開發", "共同供應契約"]
     results = []
     
-    # 加入擬真瀏覽器 Header 避免被伺服器視為爬蟲封鎖 (HTTP 403)
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
     }
@@ -135,7 +134,7 @@ def send_telegram(token, chat_id, message):
         "disable_web_page_preview": False
     }
     resp = requests.post(url, json=payload, timeout=15)
-    print("Telegram API Response Status:", resp.status_code)
+    print("Telegram API Status Code:", resp.status_code)
 
 def main():
     today = datetime.now().strftime("%Y-%m-%d")
