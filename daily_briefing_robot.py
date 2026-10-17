@@ -30,7 +30,7 @@ def fetch_stocks():
         "6214.TW": "精誠", "3029.TW": "零壹", "2480.TW": "敦陽科", 
         "4953.TWO": "緯軟", "6689.TW": "伊雲谷", "6183.TW": "邁達特",
         "2453.TW": "凌群", "6741.TWO": "宏碁資訊", "6690.TWO": "安碁資訊", 
-        "6902.TWO": "Gogolook", "6914.TWO": "意藍", "7701.TWO": "昕力資訊"
+        "7738.TWO": "資拓宏宇", "6902.TWO": "Gogolook", "6914.TWO": "意藍"
     }
     
     stock_results = []
@@ -42,7 +42,7 @@ def fetch_stocks():
                 price = float(hist['Close'].iloc[-1])
                 prev = float(hist['Close'].iloc[-2])
                 pct = ((price - prev) / prev) * 100
-                code_number = ticker.split('.')[0]
+                code_number = ticker.split('.')
                 stock_results.append({
                     "name": name, 
                     "code": code_number, 
@@ -65,7 +65,7 @@ def fetch_stocks():
     losers_text = "\n".join([f"  🔻 {s['name']} ({s['code']}): NT${s['price']:.1f} ({s['pct']:+.2f}%)" for s in top_losers])
     
     return (
-        f"📊 全台資服族群概況 (含興櫃/上市櫃 {len(stock_results)} 檔)\n"
+        f"📊 全台資服族群概況 (含資拓宏宇/上市櫃 {len(stock_results)} 檔)\n"
         f"• 族群平均當日漲跌：{avg_pct:+.2f}%\n\n"
         f"🔥 今日強勢領漲 Top 3：\n{gainers_text}\n\n"
         f"❄️ 今日拉回弱勢 Top 3：\n{losers_text}"
@@ -76,7 +76,7 @@ def fetch_ipo_news():
     try:
         url = "https://news.cnyes.com/rss/headline?cat=tw_stock_news"
         feed = feedparser.parse(url)
-        ipo_keywords = ["IPO", "興櫃", "上市", "上櫃", "創櫃", "公開發行", "轉主板"]
+        ipo_keywords = ["IPO", "興櫃", "上市", "上櫃", "創櫃", "公開發行", "轉主板", "資拓宏宇"]
         
         matched_news = []
         for entry in feed.entries:
@@ -93,15 +93,20 @@ def fetch_ipo_news():
     except Exception:
         return "• IPO 訊息抓取中"
 
-# 4. 透過 g0v 開放 API 抓取政府電子採購網即時標案
+# 4. 透過 g0v 開放 API 抓取政府電子採購網即時標案 (加入 User-Agent 解決 HTTP 403)
 def fetch_tenders():
     keywords = ["網站建置", "軟體開發", "共同供應契約"]
     results = []
     
+    # 加入擬真瀏覽器 Header 避免被伺服器視為爬蟲封鎖 (HTTP 403)
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    }
+    
     for kw in keywords:
         try:
             url = f"https://pcc.g0v.ronny.tw/api/v1/search?query={kw}"
-            resp = requests.get(url, timeout=10)
+            resp = requests.get(url, headers=headers, timeout=10)
             
             if resp.status_code == 200:
                 data = resp.json()
@@ -121,7 +126,7 @@ def fetch_tenders():
             
     return "\n".join(results)
 
-# 5. Telegram 自動發送（純文字模式，100% 防格式解析錯誤）
+# 5. Telegram 自動發送
 def send_telegram(token, chat_id, message):
     url = f"https://api.telegram.org/bot{token}/sendMessage"
     payload = {
@@ -131,7 +136,6 @@ def send_telegram(token, chat_id, message):
     }
     resp = requests.post(url, json=payload, timeout=15)
     print("Telegram API Response Status:", resp.status_code)
-    print("Telegram API Response Text:", resp.text)
 
 def main():
     today = datetime.now().strftime("%Y-%m-%d")
