@@ -1,7 +1,8 @@
 streamlit
+yfinance
 pandas
 plotly
-yfinance
 requests
-beautifulsoup4
 feedparser
+beautifulsoup4
+google-generativeai
