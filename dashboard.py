@@ -20,11 +20,11 @@ st.set_page_config(
 )
 
 # ==========================================
-# 2. 全台資服族群對照表 (代碼校正：資拓宏宇為 6614)
+# 2. 全台資服族群對照表 (6614.TW 證交所上市/數位雲端)
 # ==========================================
 STOCKS_BY_MARKET = {
-    "上市資服": {
-        "6614.TWO": "資拓宏宇 (中華電信旗下/系統整合)",
+    "上市資服與數位雲端": {
+        "6614.TW": "資拓宏宇 (證交所上市/數位雲端)",
         "2427.TW": "三商電 (系統整合/金融端)",
         "2453.TW": "凌群 (系統整合/資安)",
         "2471.TW": "資通 (ERP/金融軟體)",
@@ -85,7 +85,7 @@ def generate_gcal_link(title, unit, deadline_date):
         return "https://calendar.google.com/"
 
 # ==========================================
-# 4. 即時數據抓取 (大盤、標案 API、多元財經新聞)
+# 4. 即時數據抓取
 # ==========================================
 
 @st.cache_data(ttl=600)
@@ -186,7 +186,7 @@ def get_live_tenders():
             "類別": ["共同供應契約", "網站建置", "軟體開發", "共同供應契約", "資安/軟體"],
             "截止投標日": [d1.strftime("%Y-%m-%d"), d2.strftime("%Y-%m-%d"), d3.strftime("%Y-%m-%d"), d4.strftime("%Y-%m-%d"), d5.strftime("%Y-%m-%d")],
             "緊迫程度": ["🔴 極緊急 (剩 2 天)", "🔴 極緊急 (剩 4 天)", "🟡 倒數中 (剩 6 天)", "🟢 充裕 (剩 9 天)", "🟢 充裕 (剩 12 天)"],
-            "剩餘天數": [2, 4, 6, 9, 12],
+            "剩餘天數":,
             "詳情連結": ["https://web.pcc.gov.tw/"] * 5,
             "日曆提醒": [generate_gcal_link("政府軟體共契案", "數位發展部", d1)] * 5
         })
@@ -222,7 +222,7 @@ def get_live_news():
             {"category": "🌐 國際財經", "title": "國際晶片巨頭財報優於預估，帶動全球半導體與 AI 供應鏈走強", "link": "https://news.cnyes.com/"},
             {"category": "📈 國內台股總經", "title": "台股加權指數多頭架構擴展，外資與本土資金持續挹注權值股", "link": "https://news.cnyes.com/"},
             {"category": "📈 國內台股總經", "title": "國發會景氣燈號呈穩定復甦，出口與國內內需投資雙引擎帶動", "link": "https://news.cnyes.com/"},
-            {"category": "💻 資服與科技要事", "title": "資服業者積極佈局公部門數位轉型，金融與製造業資安升級需求旺盛", "link": "https://news.cnyes.com/"},
+            {"category": "💻 資服與科技要事", "title": "資服與數位雲端業者積極佈局公部門數位轉型，訂單能見度佳", "link": "https://news.cnyes.com/"},
             {"category": "💻 資服與科技要事", "title": "雲端代理與大數據分析廠商營收表現亮眼，AI 生成式應用加速落地", "link": "https://news.cnyes.com/"}
         ]
     return news_items
@@ -282,7 +282,7 @@ st.markdown("""
 st.sidebar.title("🎛️ 觀測站控制台")
 st.sidebar.caption(f"📅 資料更新時間：{datetime.now().strftime('%Y-%m-%d %H:%M')}")
 
-market_category = st.sidebar.radio("市場別分類", ["全部類股", "上市資服", "興櫃/創新板/IPO新星", "上櫃資服"])
+market_category = st.sidebar.radio("市場別分類", ["全部類股", "上市資服與數位雲端", "興櫃/創新板/IPO新星", "上櫃資服"])
 
 stock_options = {}
 if market_category == "全部類股":
@@ -314,7 +314,7 @@ live_news_list = get_live_news()
 # ==========================================
 st.markdown(f"""
 <div class="header-banner">
-    <div class="header-title">📊 全台資服產業、IPO興櫃新星與標案觀測儀表板</div>
+    <div class="header-title">📊 全台資服與數位雲端產業、IPO興櫃新星與標案觀測儀表板</div>
     <div class="header-subtitle">即時串接證交所/櫃買大盤、資服個股 K 線、政府電子採購網 API 與國內外財經新聞</div>
 </div>
 """, unsafe_allow_html=True)
@@ -324,7 +324,7 @@ with c1:
     color_cls = "change-up" if is_up else "change-down"
     st.markdown(f'<div class="metric-card"><div class="metric-label">加權指數 (TAIEX) 即時</div><div class="metric-value">{taiex_val}</div><div class="{color_cls}">{taiex_change}</div></div>', unsafe_allow_html=True)
 with c2:
-    st.markdown('<div class="metric-card"><div class="metric-label">資服追蹤檔數</div><div class="metric-value">30 檔</div><div class="change-up">含資拓宏宇 (6614) 等焦點股</div></div>', unsafe_allow_html=True)
+    st.markdown('<div class="metric-card"><div class="metric-label">資服/數位雲端追蹤</div><div class="metric-value">30 檔</div><div class="change-up">含資拓宏宇 (6614) 等上市股</div></div>', unsafe_allow_html=True)
 with c3:
     st.markdown(f'<div class="metric-card"><div class="metric-label">線上標案與共契</div><div class="metric-value">{len(live_tenders_df)} 件</div><div class="change-up">▲ 倒數追蹤中</div></div>', unsafe_allow_html=True)
 with c4:
@@ -414,7 +414,10 @@ with tab1:
                     else:
                         st.info(f"⚪ **RSI ({latest_rsi:.1f}) 正常**：指標處於 30~70 健康整理區間。")
         else:
-            st.warning(f"⚠️ **{stock_code_clean} {stock_name}** 為興櫃/未公開發行股，Yahoo Finance 暫未提供歷史 K 線資料數據。建議前往 [證券櫃檯買賣中心 (TPEx)](https://www.tpex.org.tw/) 查看即時行情。")
+            twse_link = f"https://www.twse.com.tw/zh/stock/single/stock.html?code={stock_code_clean}"
+            with st.container(border=True):
+                st.info(f"📌 **{stock_code_clean} {stock_name}** 為臺灣證券交易所上市公司。")
+                st.markdown(f"🔗 [點擊開啟臺灣證券交易所 (TWSE) 官方觀看 {stock_code_clean} 行情]({twse_link})")
     except Exception as e:
         st.warning(f"⚠️ 該個股數據載入中或暫無公開行情數據。")
 
