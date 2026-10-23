@@ -29,7 +29,7 @@ def summarize_tender_with_ai(tender_title, unit_name, kw="", days_left=7):
     except Exception:
         return f"  🤖 AI分析 ({urgency_str})：含【{kw}】軟硬體與服務需求，請儘速評估投標規格。"
 
-# 2. 多元國內外財經要事
+# 2. 多元新聞
 def fetch_news():
     news_items = []
     headers = {
@@ -56,14 +56,14 @@ def fetch_news():
         news_items = [
             "• [🌐 國際財經] 美聯儲降息預期升溫，全球股市與美股市場強勢上揚\n  🔗 https://news.cnyes.com/",
             "• [📈 國內總經與台股] 加權指數多頭架構延伸，企業資本支出與內需雙動能熱絡\n  🔗 https://news.cnyes.com/",
-            "• [💻 資服與科技要事] 資服業者搶攻公部門數位轉型與 AI 專案，訂單能見度佳\n  🔗 https://news.cnyes.com/"
+            "• [💻 資服與科技要事] 資服與數位雲端業者搶攻公部門數位轉型，訂單能見度佳\n  🔗 https://news.cnyes.com/"
         ]
     return "\n\n".join(news_items)
 
-# 3. 股票行情 (資拓宏宇代號校正為 6614)
+# 3. 股票行情 (6614.TW 證交所上市)
 def fetch_stocks():
     stocks = {
-        "6614.TWO": "資拓宏宇", "6214.TW": "精誠", "3029.TW": "零壹", "2480.TW": "敦陽科", 
+        "6614.TW": "資拓宏宇", "6214.TW": "精誠", "3029.TW": "零壹", "2480.TW": "敦陽科", 
         "4953.TWO": "緯軟", "6689.TW": "伊雲谷", "6183.TW": "邁達特",
         "2453.TW": "凌群", "6741.TWO": "宏碁資訊", "6690.TWO": "安碁資訊", 
         "6902.TWO": "Gogolook", "6914.TWO": "意藍"
@@ -101,7 +101,7 @@ def fetch_stocks():
     losers_text = "\n".join([f"  🔻 {s['name']} ({s['code']}): NT${s['price']:.1f} ({s['pct']:+.2f}%)" for s in top_losers])
     
     return (
-        f"📊 全台資服族群概況 (含資拓宏宇 6614 / 上市櫃 {len(stock_results)} 檔)\n"
+        f"📊 全台資服/數位雲端族群概況 (含資拓宏宇 6614 / 上市櫃 {len(stock_results)} 檔)\n"
         f"• 族群平均當日漲跌：{avg_pct:+.2f}%\n\n"
         f"🔥 今日強勢領漲 Top 3：\n{gainers_text}\n\n"
         f"❄️ 今日拉回弱勢 Top 3：\n{losers_text}"
@@ -203,7 +203,7 @@ def main():
         f"📊 【每日情報晨報】{today}\n\n"
         f"🌐 一、全方位國內外財經要事：\n{news}\n\n"
         f"🚀 二、資服業 IPO 與興櫃焦點：\n{ipo_info}\n\n"
-        f"📈 三、資服族群行情速報 (含資拓宏宇 6614)：\n{stocks}\n\n"
+        f"📈 三、資服與數位雲端行情速報 (含資拓宏宇 6614.TW)：\n{stocks}\n\n"
         f"🏛️ 四、公部門標案與共契即時情報 (含倒數與 AI 解析)：\n{tenders}\n\n"
         f"💡 點擊開啟 Streamlit 彩色圖表儀表板：\n"
         f"{dashboard_url}"
