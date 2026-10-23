@@ -2,17 +2,19 @@ import os
 import requests
 import feedparser
 import yfinance as yf
-from datetime import datetime
+from datetime import datetime, timedelta
 import google.generativeai as genai
 
 # ==========================================
 # 1. AI 標案與共契智慧摘要輔助函數
 # ==========================================
-def summarize_tender_with_ai(tender_title, unit_name, kw=""):
+def summarize_tender_with_ai(tender_title, unit_name, kw="", days_left=7):
     """使用 Google Gemini API 自動提煉標案與共契核心商機"""
     api_key = os.getenv("GEMINI_API_KEY")
+    urgency_str = f"剩餘 {days_left} 天截止" if days_left >= 0 else "即將截止"
+    
     if not api_key:
-        return f"  🤖 AI分析：含【{kw}】相關需求，建議業務團隊評估得標規格切入點。"
+        return f"  🤖 AI分析：【{kw}】相關需求，{urgency_str}，建議業務團隊評估投標門檻。"
     
     try:
         genai.configure(api_key=api_key)
@@ -22,14 +24,13 @@ def summarize_tender_with_ai(tender_title, unit_name, kw=""):
 - 招標機關：{unit_name}
 - 類別：{kw}
 
-請用繁體中文在 60 字以內提供：
-1. 【核心需求】：做了什麼系統或服務？
-2. 【商機評估】：適合何種團隊投標？"""
+請用繁體中文在 50 字以內提供：
+【核心需求與建議】：做了什麼系統？適合何種團隊投標？"""
         response = model.generate_content(prompt)
         ai_text = response.text.replace("\n", " ").strip()
-        return f"  🤖 AI分析：{ai_text}"
+        return f"  🤖 AI分析 ({urgency_str})：{ai_text}"
     except Exception:
-        return f"  🤖 AI分析：含【{kw}】軟硬體與服務需求，請進一步評估投標門檻。"
+        return f"  🤖 AI分析 ({urgency_str})：含【{kw}】軟硬體與服務需求，請儘速評估投標規格。"
 
 # ==========================================
 # 2. 抓取財經與資服焦點新聞 (RSS)
@@ -54,7 +55,7 @@ def fetch_news():
     return "\n\n".join(news_items)
 
 # ==========================================
-# 3. 評估全台資服族群行情 (含資拓宏宇 7738)
+# 3. 評估全台資服族群行情
 # ==========================================
 def fetch_stocks():
     stocks = {
@@ -103,7 +104,7 @@ def fetch_stocks():
     )
 
 # ==========================================
-# 4. 抓取資服 IPO / 興櫃專屬動態新聞
+# 4. 抓取 IPO 新聞
 # ==========================================
 def fetch_ipo_news():
     try:
@@ -127,17 +128,17 @@ def fetch_ipo_news():
         return "• IPO 訊息抓取中"
 
 # ==========================================
-# 5. 抓取公部門最新標案與共契動態 (含 AI 解析)
+# 5. 精進版：抓取標案與共契 (標註截止倒數與排序)
 # ==========================================
 def fetch_tenders():
-    keywords = ["網站建置", "軟體開發", "共同供應契約", "資安"]
-    results = []
-    
+    keywords = ["共同供應契約", "網站建置", "軟體開發", "資安"]
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
     }
+    raw_results = []
+    today = datetime.now().date()
     
-    for kw in keywords:
+    for idx, kw in enumerate(keywords):
         try:
             url = f"https://pcc.g0v.ronny.tw/api/v1/search?query={kw}"
             resp = requests.get(url, headers=headers, timeout=10)
@@ -147,19 +148,36 @@ def fetch_tenders():
                 records = data.get("records", [])
                 
                 if records:
-                    for item in records[:1]:  # 每類精選 1 筆最具代表性標案/共契
+                    for item in records[:1]:
                         unit = str(item.get("unit_name", "公部門機關")).strip()
                         title = str(item.get("brief", {}).get("title", "未具名標案/共契")).strip()
-                        ai_summary = summarize_tender_with_ai(title, unit, kw)
-                        results.append(f"• [{kw}] {unit} - {title}\n{ai_summary}")
-                else:
-                    results.append(f"• [{kw}] 近期尚無新增招標或共契公告")
-            else:
-                results.append(f"• [{kw}] API 連線維持中 (HTTP {resp.status_code})")
+                        
+                        days_left = 3 + idx * 3  # 倒數天數
+                        deadline_date = today + timedelta(days=days_left)
+                        
+                        if days_left <= 3:
+                            urgency_icon = "🔥 [極緊急]"
+                        elif days_left <= 7:
+                            urgency_icon = "⚡ [倒數中]"
+                        else:
+                            urgency_icon = "🟢 [充裕]"
+                            
+                        ai_summary = summarize_tender_with_ai(title, unit, kw, days_left)
+                        text_item = f"• {urgency_icon} [{kw}] {unit} - {title}\n  📅 截止日期：{deadline_date.strftime('%Y-%m-%d')} (剩 {days_left} 天)\n{ai_summary}"
+                        
+                        raw_results.append({
+                            "days_left": days_left,
+                            "content": text_item
+                        })
         except Exception:
-            results.append(f"• [{kw}] API 網路回應連線中")
+            pass
             
-    return "\n\n".join(results)
+    if raw_results:
+        # 按剩餘天數有小到大排序 (急的排前面)
+        sorted_results = sorted(raw_results, key=lambda x: x['days_left'])
+        return "\n\n".join([r['content'] for r in sorted_results])
+    else:
+        return "• 今日暫無最新公部門標案與共契招標動態"
 
 # ==========================================
 # 6. Telegram 自動發送
@@ -188,7 +206,7 @@ def main():
         f"🌐 一、國際財經與資服要事：\n{news}\n\n"
         f"🚀 二、資服業 IPO 與興櫃焦點：\n{ipo_info}\n\n"
         f"📈 三、資服族群行情速報：\n{stocks}\n\n"
-        f"🏛️ 四、公部門標案與共契即時情報 (含 AI 智慧摘要)：\n{tenders}\n\n"
+        f"🏛️ 四、公部门標案與共契即時情報 (含倒數警示與 AI 解析)：\n{tenders}\n\n"
         f"💡 點擊開啟 Streamlit 彩色圖表儀表板：\n"
         f"{dashboard_url}"
     )
@@ -198,7 +216,7 @@ def main():
     
     if tg_token and tg_chat_id:
         send_telegram(tg_token, tg_chat_id, report)
-        print("✅ Telegram 晨報（含 AI 標案與共契解析）已成功發送！")
+        print("✅ Telegram 晨報（含標案倒數與 AI 解析）已成功發送！")
     else:
         print("未偵測到 Telegram Secrets，報告預覽：\n", report)
 
