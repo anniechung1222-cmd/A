@@ -20,11 +20,13 @@ st.set_page_config(
 )
 
 # ==========================================
-# 2. 全台資服族群對照表 (對接 TWSE / TPEx 官方最新分類)
+# 2. 全台資服族群對照表 (2026 證交所/櫃買最新掛牌分類)
 # ==========================================
 STOCKS_BY_MARKET = {
     "上市": {
         "6614.TW": "資拓宏宇 (數位雲端/系統整合)",
+        "6902.TW": "Gogolook (走著瞧/防詐AI)",
+        "6906.TW": "現觀科技 (電信大數據/AI)",
         "6214.TW": "精誠 (資服龍頭/數據分析)",
         "3029.TW": "零壹 (網路資安代理)",
         "2480.TW": "敦陽科 (系統整合/資安)",
@@ -35,6 +37,7 @@ STOCKS_BY_MARKET = {
         "6689.TW": "伊雲谷 (AWS雲端代理)"
     },
     "上櫃": {
+        "6925.TWO": "意藍資訊 (社群大數據/AI語意)",
         "6741.TWO": "宏碁資訊 (微軟雲端代理)",
         "6690.TWO": "安碁資訊 (宏碁資安SOC)",
         "6752.TWO": "叡揚 (公文/雲端SaaS)",
@@ -46,16 +49,11 @@ STOCKS_BY_MARKET = {
         "3570.TWO": "大塚 (CAD/3D設計軟體)",
         "5403.TWO": "中菲 (金融系統/資服)"
     },
-    "創新板": {
-        "6902.TW": "走著瞧-創 (Gogolook/AI防詐)"
-    },
     "興櫃": {
-        "6914.TWO": "意藍資訊 (社群大數據/AI語意)",
         "7781.TWO": "昕力資* (API管理/金融AI)"
     },
-    "公開發行 / IPO輔導": {
-        "7730.TWO": "核心智識 (公部門AI/知識庫)",
-        "6906.TWO": "現觀科技 (電信大數據/AI)"
+    "未上市櫃 / 公開發行": {
+        "7730.TWO": "核心智識 (保險科技eKYC/專家系統)"
     }
 }
 
@@ -280,7 +278,7 @@ st.markdown("""
 st.sidebar.title("🎛️ 觀測站控制台")
 st.sidebar.caption(f"📅 資料更新時間：{datetime.now().strftime('%Y-%m-%d %H:%M')}")
 
-market_category = st.sidebar.radio("官方交易市場類別", ["全部類股", "上市", "上櫃", "創新板", "興櫃", "公開發行 / IPO輔導"])
+market_category = st.sidebar.radio("官方交易市場類別", ["全部類股", "上市", "上櫃", "興櫃", "未上市櫃 / 公開發行"])
 
 stock_options = {}
 if market_category == "全部類股":
@@ -322,11 +320,11 @@ with c1:
     color_cls = "change-up" if is_up else "change-down"
     st.markdown(f'<div class="metric-card"><div class="metric-label">加權指數 (TAIEX) 即時</div><div class="metric-value">{taiex_val}</div><div class="{color_cls}">{taiex_change}</div></div>', unsafe_allow_html=True)
 with c2:
-    st.markdown('<div class="metric-card"><div class="metric-label">資服/數位雲端追蹤</div><div class="metric-value">25 檔</div><div class="change-up">含資拓宏宇 (6614) 等上市股</div></div>', unsafe_allow_html=True)
+    st.markdown('<div class="metric-card"><div class="metric-label">資服/數位雲端追蹤</div><div class="metric-value">25 檔</div><div class="change-up">含資拓宏宇/走著瞧/現觀</div></div>', unsafe_allow_html=True)
 with c3:
     st.markdown(f'<div class="metric-card"><div class="metric-label">線上標案與共契</div><div class="metric-value">{len(live_tenders_df)} 件</div><div class="change-up">▲ 倒數追蹤中</div></div>', unsafe_allow_html=True)
 with c4:
-    st.markdown('<div class="metric-card"><div class="metric-label">IPO / 興櫃關注</div><div class="metric-value">5 家</div><div style="color:#D97706; font-weight:700; font-size:0.85rem;">軟體/AI/大數據為主</div></div>', unsafe_allow_html=True)
+    st.markdown('<div class="metric-card"><div class="metric-label">IPO / 興櫃焦點</div><div class="metric-value">5 家</div><div style="color:#D97706; font-weight:700; font-size:0.85rem;">軟體/AI/大數據為主</div></div>', unsafe_allow_html=True)
 
 st.markdown("<br>", unsafe_allow_html=True)
 
@@ -427,20 +425,26 @@ with tab1:
 
 # TAB 2: IPO/興櫃與公開發行
 with tab2:
-    st.subheader("🚀 國內資服業 IPO、創新板與興櫃潛力股追蹤")
+    st.subheader("🚀 國內資服業 IPO、上市櫃與未上市焦點股 (2026 最新)")
     
     ipo_df = pd.DataFrame({
-        "股票代碼": ["6902", "6914", "7781", "7730", "6906"],
+        "股票代碼": ["6902", "6925", "7781", "7730", "6906"],
         "公司名稱": ["Gogolook (走著瞧)", "意藍資訊", "昕力資*", "核心智識", "現觀科技"],
-        "核心業務 / 產品": [
+        "核心產品 / AI 技術": [
             "Whoscall 信任科技 / 防詐 AI 數據庫",
             "OpView 社群大數據 / 意藍 LLM 語意分析",
             "DigiRunner API 管理 / 金融 AI 微服務",
-            "公部門 AI 知識庫管理 / 文件自動化檢索",
+            "保險科技 eKYC、遠端智能投保 / 專家系統",
             "電信大數據分析 / 行動網路優化 AI 平台"
         ],
-        "官方交易市場": ["創新板 (轉上市中)", "興櫃", "興櫃", "公開發行", "IPO輔導完成"],
-        "IPO / 掛牌進度": ["已登錄創新板 / 規劃轉主板", "興櫃交易中", "興櫃交易中", "公開發行申報生效 / 興櫃輔導中", "上市輔導完成"]
+        "最新掛牌類別 (2026)": ["上市 (數位雲端)", "上櫃 (數位雲端)", "興櫃 (數位雲端)", "未上市櫃", "上市 (數位雲端)"],
+        "交易狀態說明": [
+            "自 2025/05/16 正式改列一般板上市",
+            "自 2025/05/28 掛牌上櫃 (原代號6914改為6925)",
+            "興櫃市場正常交易中",
+            "專注保險科技與身分驗證，尚未登錄興櫃",
+            "已於 2024/01/15 正式掛牌上市"
+        ]
     })
     st.dataframe(ipo_df, use_container_width=True)
 
