@@ -51,9 +51,6 @@ STOCKS_BY_MARKET = {
     },
     "興櫃": {
         "7781.TWO": "昕力資* (API管理/金融AI)"
-    },
-    "未上市櫃 / 公開發行": {
-        "7730.TWO": "核心智識 (保險科技eKYC/專家系統)"
     }
 }
 
@@ -278,7 +275,7 @@ st.markdown("""
 st.sidebar.title("🎛️ 觀測站控制台")
 st.sidebar.caption(f"📅 資料更新時間：{datetime.now().strftime('%Y-%m-%d %H:%M')}")
 
-market_category = st.sidebar.radio("官方交易市場類別", ["全部類股", "上市", "上櫃", "興櫃", "未上市櫃 / 公開發行"])
+market_category = st.sidebar.radio("官方交易市場類別", ["全部類股", "上市", "上櫃", "興櫃"])
 
 stock_options = {}
 if market_category == "全部類股":
@@ -320,7 +317,7 @@ with c1:
     color_cls = "change-up" if is_up else "change-down"
     st.markdown(f'<div class="metric-card"><div class="metric-label">加權指數 (TAIEX) 即時</div><div class="metric-value">{taiex_val}</div><div class="{color_cls}">{taiex_change}</div></div>', unsafe_allow_html=True)
 with c2:
-    st.markdown('<div class="metric-card"><div class="metric-label">資服/數位雲端追蹤</div><div class="metric-value">25 檔</div><div class="change-up">含資拓宏宇/走著瞧/現觀</div></div>', unsafe_allow_html=True)
+    st.markdown('<div class="metric-card"><div class="metric-label">資服/數位雲端追蹤</div><div class="metric-value">23 檔</div><div class="change-up">含資拓宏宇/走著瞧/現觀</div></div>', unsafe_allow_html=True)
 with c3:
     st.markdown(f'<div class="metric-card"><div class="metric-label">線上標案與共契</div><div class="metric-value">{len(live_tenders_df)} 件</div><div class="change-up">▲ 倒數追蹤中</div></div>', unsafe_allow_html=True)
 with c4:
@@ -423,18 +420,18 @@ with tab1:
     except Exception as e:
         st.warning(f"⚠️ 該個股數據載入中或暫無公開行情數據。")
 
-# TAB 2: IPO/興櫃與公開發行
+# TAB 2: IPO/興櫃與未上市焦點股
 with tab2:
     st.subheader("🚀 國內資服業 IPO、上市櫃與未上市焦點股 (2026 最新)")
     
     ipo_df = pd.DataFrame({
-        "股票代碼": ["6902", "6925", "7781", "7730", "6906"],
+        "股票代碼": ["6902", "6925", "7781", "無 (未上市)", "6906"],
         "公司名稱": ["Gogolook (走著瞧)", "意藍資訊", "昕力資*", "核心智識", "現觀科技"],
         "核心產品 / AI 技術": [
             "Whoscall 信任科技 / 防詐 AI 數據庫",
             "OpView 社群大數據 / 意藍 LLM 語意分析",
             "DigiRunner API 管理 / 金融 AI 微服務",
-            "保險科技 eKYC、遠端智能投保 / 專家系統",
+            "保險科技 eKYC、遠端 Rita 智能投保、專家系統",
             "電信大數據分析 / 行動網路優化 AI 平台"
         ],
         "最新掛牌類別 (2026)": ["上市 (數位雲端)", "上櫃 (數位雲端)", "興櫃 (數位雲端)", "未上市櫃", "上市 (數位雲端)"],
@@ -442,7 +439,7 @@ with tab2:
             "自 2025/05/16 正式改列一般板上市",
             "自 2025/05/28 掛牌上櫃 (原代號6914改為6925)",
             "興櫃市場正常交易中",
-            "專注保險科技與身分驗證，尚未登錄興櫃",
+            "專注保險科技 eKYC 與遠端 Rita 智能投保，未登錄興櫃 (無 7730 代號)",
             "已於 2024/01/15 正式掛牌上市"
         ]
     })
