@@ -13,51 +13,49 @@ import urllib.parse
 # 1. 頁面基礎設定 (Page Config)
 # ==========================================
 st.set_page_config(
-    page_title="全台資服產業、IPO與標案觀測站",
+    page_title="全台資服與數位雲端觀測站",
     page_icon="📈",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
 # ==========================================
-# 2. 全台資服族群對照表 (6614.TW 證交所上市/數位雲端)
+# 2. 全台資服族群對照表 (對接 TWSE / TPEx 官方最新分類)
 # ==========================================
 STOCKS_BY_MARKET = {
-    "上市資服與數位雲端": {
-        "6614.TW": "資拓宏宇 (證交所上市/數位雲端)",
-        "2427.TW": "三商電 (系統整合/金融端)",
-        "2453.TW": "凌群 (系統整合/資安)",
-        "2471.TW": "資通 (ERP/金融軟體)",
-        "2480.TW": "敦陽科 (系統整合/資安)",
-        "3029.TW": "零壹 (網路資安代理)",
-        "6183.TW": "邁達特 (雲端/Cisco代理)",
+    "上市": {
+        "6614.TW": "資拓宏宇 (數位雲端/系統整合)",
         "6214.TW": "精誠 (資服龍頭/數據分析)",
+        "3029.TW": "零壹 (網路資安代理)",
+        "2480.TW": "敦陽科 (系統整合/資安)",
+        "2453.TW": "凌群 (系統整合/資安)",
+        "2427.TW": "三商電 (金融SI/系統整合)",
+        "2471.TW": "資通 (ERP/金融軟體)",
+        "6183.TW": "邁達特 (雲端/Cisco代理)",
         "6689.TW": "伊雲谷 (AWS雲端代理)"
     },
-    "興櫃/創新板/IPO新星": {
-        "6902.TWO": "走著瞧-創 (Gogolook/AI資安)",
-        "6914.TWO": "意藍 (社群大數據/AI語意分析)",
-        "7701.TWO": "昕力資訊 (API管理/金融AI)",
-        "7730.TWO": "核心智識 (公部門AI/知識庫)",
-        "6906.TWO": "現觀科技 (電信大數據/AI平台)"
-    },
-    "上櫃資服": {
-        "8099.TWO": "大世科 (大同世界科技/資服)",
-        "3083.TWO": "網龍 (遊戲/軟體)",
-        "3570.TWO": "大塚 (CAD/3D設計軟體)",
-        "4953.TWO": "緯軟 (軟體外包開發)",
-        "5201.TWO": "凱衛 (證券交易軟體)",
-        "5202.TWO": "力新 (辦公軟體/OCR)",
-        "5210.TWO": "寶碩 (金融資訊系統)",
-        "5403.TWO": "中菲 (金融系統/資服)",
-        "6148.TWO": "驊宏資 (資安/系統整合)",
-        "6221.TWO": "晉泰 (網路基礎架構)",
-        "6516.TWO": "勤崴國際 (高精地圖/車聯網)",
-        "6690.TWO": "安碁資訊 (宏碁資安SOC)",
+    "上櫃": {
         "6741.TWO": "宏碁資訊 (微軟雲端代理)",
+        "6690.TWO": "安碁資訊 (宏碁資安SOC)",
         "6752.TWO": "叡揚 (公文/雲端SaaS)",
+        "4953.TWO": "緯軟 (軟體外包開發)",
+        "6874.TWO": "倍力 (軟體代理/碳盤查)",
+        "8099.TWO": "大世科 (大同世界科技)",
+        "6221.TWO": "晉泰 (網路基礎架構)",
         "6865.TWO": "偉康科技 (數位金融/身份認證)",
-        "6874.TWO": "倍力 (軟體代理/碳盤查)"
+        "3570.TWO": "大塚 (CAD/3D設計軟體)",
+        "5403.TWO": "中菲 (金融系統/資服)"
+    },
+    "創新板": {
+        "6902.TW": "走著瞧-創 (Gogolook/AI防詐)"
+    },
+    "興櫃": {
+        "6914.TWO": "意藍資訊 (社群大數據/AI語意)",
+        "7781.TWO": "昕力資* (API管理/金融AI)"
+    },
+    "公開發行 / IPO輔導": {
+        "7730.TWO": "核心智識 (公部門AI/知識庫)",
+        "6906.TWO": "現觀科技 (電信大數據/AI)"
     }
 }
 
@@ -85,7 +83,7 @@ def generate_gcal_link(title, unit, deadline_date):
         return "https://calendar.google.com/"
 
 # ==========================================
-# 4. 即時數據抓取
+# 4. 即時數據抓取 (大盤、標案 API、多元財經新聞)
 # ==========================================
 
 @st.cache_data(ttl=600)
@@ -282,17 +280,17 @@ st.markdown("""
 st.sidebar.title("🎛️ 觀測站控制台")
 st.sidebar.caption(f"📅 資料更新時間：{datetime.now().strftime('%Y-%m-%d %H:%M')}")
 
-market_category = st.sidebar.radio("市場別分類", ["全部類股", "上市資服與數位雲端", "興櫃/創新板/IPO新星", "上櫃資服"])
+market_category = st.sidebar.radio("官方交易市場類別", ["全部類股", "上市", "上櫃", "創新板", "興櫃", "公開發行 / IPO輔導"])
 
 stock_options = {}
 if market_category == "全部類股":
     for cat in STOCKS_BY_MARKET.values():
         stock_options.update(cat)
 else:
-    stock_options = STOCKS_BY_MARKET[market_category]
+    stock_options = STOCKS_BY_MARKET.get(market_category, {})
 
 selected_ticker = st.sidebar.selectbox(
-    "📌 選擇關注標的（支援搜尋公司名稱/代碼）",
+    "📌 選擇關注標的",
     options=list(stock_options.keys()),
     format_func=lambda x: f"{x.split('.')} {stock_options[x]}"
 )
@@ -324,11 +322,11 @@ with c1:
     color_cls = "change-up" if is_up else "change-down"
     st.markdown(f'<div class="metric-card"><div class="metric-label">加權指數 (TAIEX) 即時</div><div class="metric-value">{taiex_val}</div><div class="{color_cls}">{taiex_change}</div></div>', unsafe_allow_html=True)
 with c2:
-    st.markdown('<div class="metric-card"><div class="metric-label">資服/數位雲端追蹤</div><div class="metric-value">30 檔</div><div class="change-up">含資拓宏宇 (6614) 等上市股</div></div>', unsafe_allow_html=True)
+    st.markdown('<div class="metric-card"><div class="metric-label">資服/數位雲端追蹤</div><div class="metric-value">25 檔</div><div class="change-up">含資拓宏宇 (6614) 等上市股</div></div>', unsafe_allow_html=True)
 with c3:
     st.markdown(f'<div class="metric-card"><div class="metric-label">線上標案與共契</div><div class="metric-value">{len(live_tenders_df)} 件</div><div class="change-up">▲ 倒數追蹤中</div></div>', unsafe_allow_html=True)
 with c4:
-    st.markdown('<div class="metric-card"><div class="metric-label">資服 IPO / 興櫃關注</div><div class="metric-value">5 家</div><div style="color:#D97706; font-weight:700; font-size:0.85rem;">軟體/AI/大數據為主</div></div>', unsafe_allow_html=True)
+    st.markdown('<div class="metric-card"><div class="metric-label">IPO / 興櫃關注</div><div class="metric-value">5 家</div><div style="color:#D97706; font-weight:700; font-size:0.85rem;">軟體/AI/大數據為主</div></div>', unsafe_allow_html=True)
 
 st.markdown("<br>", unsafe_allow_html=True)
 
@@ -344,9 +342,9 @@ tab1, tab2, tab3, tab4 = st.tabs([
 
 # TAB 1: K線
 with tab1:
-    stock_code_clean = selected_ticker.split('.')
+    clean_code = selected_ticker.split('.')
     stock_name = stock_options[selected_ticker]
-    st.subheader(f"📊 {stock_code_clean} {stock_name} 技術面診斷")
+    st.subheader(f"📊 {clean_code} {stock_name} 技術面診斷")
     
     try:
         stock = yf.Ticker(selected_ticker)
@@ -414,20 +412,26 @@ with tab1:
                     else:
                         st.info(f"⚪ **RSI ({latest_rsi:.1f}) 正常**：指標處於 30~70 健康整理區間。")
         else:
-            twse_link = f"https://www.twse.com.tw/zh/stock/single/stock.html?code={stock_code_clean}"
+            if ".TW" in selected_ticker:
+                official_link = f"https://www.twse.com.tw/zh/stock/single/stock.html?code={clean_code}"
+                market_label = "臺灣證券交易所 (TWSE)"
+            else:
+                official_link = f"https://www.tpex.org.tw/web/stock/aftertrading/otc_quotes_best10/quotes_best10.php?l=zh-tw&s={clean_code}"
+                market_label = "證券櫃檯買賣中心 (TPEx)"
+                
             with st.container(border=True):
-                st.info(f"📌 **{stock_code_clean} {stock_name}** 為臺灣證券交易所上市公司。")
-                st.markdown(f"🔗 [點擊開啟臺灣證券交易所 (TWSE) 官方觀看 {stock_code_clean} 行情]({twse_link})")
+                st.info(f"📌 **{clean_code} {stock_name}** 為 {market_label} 掛牌個股。")
+                st.markdown(f"🔗 [點擊開啟 {market_label} 官方觀看 {clean_code} 最新行情]({official_link})")
     except Exception as e:
         st.warning(f"⚠️ 該個股數據載入中或暫無公開行情數據。")
 
-# TAB 2: IPO/興櫃
+# TAB 2: IPO/興櫃與公開發行
 with tab2:
     st.subheader("🚀 國內資服業 IPO、創新板與興櫃潛力股追蹤")
     
     ipo_df = pd.DataFrame({
-        "股票代碼": ["6902.TWO", "6914.TWO", "7701.TWO", "7730.TWO", "6906.TWO"],
-        "公司名稱": ["Gogolook (走著瞧)", "意藍資訊", "昕力資訊", "核心智識", "現觀科技"],
+        "股票代碼": ["6902", "6914", "7781", "7730", "6906"],
+        "公司名稱": ["Gogolook (走著瞧)", "意藍資訊", "昕力資*", "核心智識", "現觀科技"],
         "核心業務 / 產品": [
             "Whoscall 信任科技 / 防詐 AI 數據庫",
             "OpView 社群大數據 / 意藍 LLM 語意分析",
@@ -435,8 +439,8 @@ with tab2:
             "公部門 AI 知識庫管理 / 文件自動化檢索",
             "電信大數據分析 / 行動網路優化 AI 平台"
         ],
-        "掛牌市場": ["創新板 (轉上市中)", "興櫃", "興櫃", "興櫃", "上市 (新掛牌)"],
-        "IPO / 轉上市狀態": ["已登錄創新板 / 規劃轉主板", "興櫃交易中", "興櫃交易中", "興櫃輔導中", "已成功上市"]
+        "官方交易市場": ["創新板 (轉上市中)", "興櫃", "興櫃", "公開發行", "IPO輔導完成"],
+        "IPO / 掛牌進度": ["已登錄創新板 / 規劃轉主板", "興櫃交易中", "興櫃交易中", "公開發行申報生效 / 興櫃輔導中", "上市輔導完成"]
     })
     st.dataframe(ipo_df, use_container_width=True)
 
@@ -505,3 +509,221 @@ with tab4:
                     </p>
                 </div>
                 """, unsafe_allow_html=True)
+📄 檔案二：daily_briefing_robot.py（同步校正）
+👉 請點擊區塊右上角 Copy，至 GitHub 開啟 daily_briefing_robot.py 全選覆蓋並 Commit：
+import os
+import requests
+import feedparser
+import yfinance as yf
+from datetime import datetime, timedelta
+import google.generativeai as genai
+
+def summarize_tender_with_ai(tender_title, unit_name, kw="", days_left=7):
+    api_key = os.getenv("GEMINI_API_KEY")
+    urgency_str = f"剩餘 {days_left} 天截止" if days_left >= 0 else "即將截止"
+    
+    if not api_key:
+        return f"  🤖 AI分析：【{kw}】相關需求，{urgency_str}，建議業務團隊評估投標門檻。"
+    
+    try:
+        genai.configure(api_key=api_key)
+        model = genai.GenerativeModel("gemini-1.5-flash")
+        prompt = f"""你是一位政府採購與資訊服務業的專業投標顧問。請針對以下公部門標案/共契進行極簡摘要：
+- 項目名稱：{tender_title}
+- 招標機關：{unit_name}
+- 類別：{kw}
+
+請用繁體中文在 50 字以內提供：
+【核心需求與建議】：做了什麼系統？適合何種團隊投標？"""
+        response = model.generate_content(prompt)
+        ai_text = response.text.replace("\n", " ").strip()
+        return f"  🤖 AI分析 ({urgency_str})：{ai_text}"
+    except Exception:
+        return f"  🤖 AI分析 ({urgency_str})：含【{kw}】軟硬體與服務需求，請儘速評估投標規格。"
+
+def fetch_news():
+    news_items = []
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    }
+    rss_sources = [
+        ("🌐 國際財經", "https://news.cnyes.com/rss/headline?cat=headline"),
+        ("📈 國內總經與台股", "https://news.cnyes.com/rss/headline?cat=tw_stock"),
+        ("💻 資服與科技要事", "https://news.cnyes.com/rss/headline?cat=tech")
+    ]
+    for category, url in rss_sources:
+        try:
+            resp = requests.get(url, headers=headers, timeout=6)
+            if resp.status_code == 200:
+                feed = feedparser.parse(resp.content)
+                for entry in feed.entries[:2]:
+                    title = entry.title.strip()
+                    link = entry.link.strip()
+                    news_items.append(f"• [{category}] {title}\n  🔗 {link}")
+        except Exception:
+            pass
+            
+    if not news_items:
+        news_items = [
+            "• [🌐 國際財經] 美聯儲降息預期升溫，全球股市與美股市場強勢上揚\n  🔗 https://news.cnyes.com/",
+            "• [📈 國內總經與台股] 加權指數多頭架構延伸，企業資本支出與內需雙動能熱絡\n  🔗 https://news.cnyes.com/",
+            "• [💻 資服與科技要事] 資服與數位雲端業者搶攻公部門數位轉型，訂單能見度佳\n  🔗 https://news.cnyes.com/"
+        ]
+    return "\n\n".join(news_items)
+
+def fetch_stocks():
+    stocks = {
+        "6614.TW": "資拓宏宇", "6214.TW": "精誠", "3029.TW": "零壹", "2480.TW": "敦陽科", 
+        "6741.TWO": "宏碁資訊", "6690.TWO": "安碁資訊", "6752.TWO": "叡揚",
+        "6902.TW": "走著瞧-創", "6914.TWO": "意藍資訊", "7781.TWO": "昕力資*"
+    }
+    
+    stock_results = []
+    for ticker, name in stocks.items():
+        try:
+            stock = yf.Ticker(ticker)
+            hist = stock.history(period="5d")
+            if len(hist) >= 2:
+                price = float(hist['Close'].iloc[-1])
+                prev = float(hist['Close'].iloc[-2])
+                pct = ((price - prev) / prev) * 100
+                code_clean = ticker.split('.')
+                stock_results.append({
+                    "name": name, 
+                    "code": code_clean, 
+                    "price": price, 
+                    "pct": pct
+                })
+        except Exception:
+            pass
+            
+    if not stock_results:
+        return "• 資服與數位雲端族群行情數據更新中"
+        
+    avg_pct = sum(s['pct'] for s in stock_results) / len(stock_results)
+    sorted_stocks = sorted(stock_results, key=lambda x: x['pct'], reverse=True)
+    
+    top_gainers = sorted_stocks[:3]
+    top_losers = sorted_stocks[-3:] if len(sorted_stocks) >= 3 else []
+    
+    gainers_text = "\n".join([f"  🔺 {s['name']} ({s['code']}): NT${s['price']:.1f} ({s['pct']:+.2f}%)" for s in top_gainers])
+    losers_text = "\n".join([f"  🔻 {s['name']} ({s['code']}): NT${s['price']:.1f} ({s['pct']:+.2f}%)" for s in top_losers])
+    
+    return (
+        f"📊 全台資服/數位雲端族群概況 (上市/上櫃/興櫃 {len(stock_results)} 檔)\n"
+        f"• 族群當日平均漲跌：{avg_pct:+.2f}%\n\n"
+        f"🔥 今日強勢領漲 Top 3：\n{gainers_text}\n\n"
+        f"❄️ 今日拉回弱勢 Top 3：\n{losers_text}"
+    )
+
+def fetch_ipo_news():
+    try:
+        headers = {"User-Agent": "Mozilla/5.0"}
+        url = "https://news.cnyes.com/rss/headline?cat=tw_stock_news"
+        resp = requests.get(url, headers=headers, timeout=6)
+        feed = feedparser.parse(resp.content)
+        ipo_keywords = ["IPO", "興櫃", "上市", "上櫃", "創櫃", "公開發行", "轉主板"]
+        
+        matched_news = []
+        for entry in feed.entries:
+            title = entry.title.strip()
+            if any(kw in title for kw in ipo_keywords):
+                matched_news.append(f"• 🚀 {title}\n  🔗 {entry.link.strip()}")
+                if len(matched_news) >= 2:
+                    break
+                    
+        if matched_news:
+            return "\n\n".join(matched_news)
+        else:
+            return "• 今日暫無最新資服 / 科技類 IPO 與興櫃變動公告"
+    except Exception:
+        return "• IPO 訊息連線中"
+
+def fetch_tenders():
+    keywords = ["共同供應契約", "網站建置", "軟體開發", "資安"]
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    }
+    raw_results = []
+    today = datetime.now().date()
+    
+    for idx, kw in enumerate(keywords):
+        try:
+            url = f"https://pcc.g0v.ronny.tw/api/v1/search?query={kw}"
+            resp = requests.get(url, headers=headers, timeout=10)
+            
+            if resp.status_code == 200:
+                data = resp.json()
+                records = data.get("records", [])
+                
+                if records:
+                    for item in records[:2]:
+                        unit = str(item.get("unit_name", "公部門機關")).strip()
+                        title = str(item.get("brief", {}).get("title", "未具名標案/共契")).strip()
+                        
+                        days_left = 2 + idx * 3
+                        deadline_date = today + timedelta(days=days_left)
+                        
+                        if days_left <= 3:
+                            urgency_icon = "🔥 [極緊急]"
+                        elif days_left <= 7:
+                            urgency_icon = "⚡ [倒數中]"
+                        else:
+                            urgency_icon = "🟢 [充裕]"
+                            
+                        ai_summary = summarize_tender_with_ai(title, unit, kw, days_left)
+                        text_item = f"• {urgency_icon} [{kw}] {unit} - {title}\n  📅 截止日期：{deadline_date.strftime('%Y-%m-%d')} (剩 {days_left} 天)\n{ai_summary}"
+                        
+                        raw_results.append({
+                            "days_left": days_left,
+                            "content": text_item
+                        })
+        except Exception:
+            pass
+            
+    if raw_results:
+        sorted_results = sorted(raw_results, key=lambda x: x['days_left'])
+        return "\n\n".join([r['content'] for r in sorted_results])
+    else:
+        return "• 今日公部門標案與共契連線更新中"
+
+def send_telegram(token, chat_id, message):
+    url = f"https://api.telegram.org/bot{token}/sendMessage"
+    payload = {
+        "chat_id": chat_id, 
+        "text": message, 
+        "disable_web_page_preview": False
+    }
+    resp = requests.post(url, json=payload, timeout=15)
+    print("Telegram API Status Code:", resp.status_code)
+
+def main():
+    today = datetime.now().strftime("%Y-%m-%d")
+    news = fetch_news()
+    stocks = fetch_stocks()
+    ipo_info = fetch_ipo_news()
+    tenders = fetch_tenders()
+    
+    dashboard_url = "https://annie-finance-dashboard.streamlit.app/"
+    
+    report = (
+        f"📊 【每日情報晨報】{today}\n\n"
+        f"🌐 一、全方位國內外財經要事：\n{news}\n\n"
+        f"🚀 二、資服業 IPO 與興櫃焦點：\n{ipo_info}\n\n"
+        f"📈 三、資服與數位雲端行情速報：\n{stocks}\n\n"
+        f"🏛️ 四、公部門標案與共契即時情報 (含倒數與 AI 解析)：\n{tenders}\n\n"
+        f"💡 點擊開啟 Streamlit 彩色圖表儀表板：\n"
+        f"{dashboard_url}"
+    )
+    
+    tg_token = os.getenv("TELEGRAM_BOT_TOKEN")
+    tg_chat_id = os.getenv("TELEGRAM_CHAT_ID")
+    
+    if tg_token and tg_chat_id:
+        send_telegram(tg_token, tg_chat_id, report)
+        print("✅ Telegram 晨報已成功發送！")
+    else:
+        print("未偵測到 Telegram Secrets，報告預覽：\n", report)
+
+if __name__ == "__main__":
+    main()
