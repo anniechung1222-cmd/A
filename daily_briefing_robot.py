@@ -60,9 +60,10 @@ def fetch_news():
 
 def fetch_stocks():
     stocks = {
-        "6614.TW": "資拓宏宇", "6214.TW": "精誠", "3029.TW": "零壹", "2480.TW": "敦陽科", 
-        "6741.TWO": "宏碁資訊", "6690.TWO": "安碁資訊", "6752.TWO": "叡揚",
-        "6902.TW": "走著瞧-創", "6914.TWO": "意藍資訊", "7781.TWO": "昕力資*"
+        "6614.TW": "資拓宏宇", "6902.TW": "Gogolook", "6906.TW": "現觀科技",
+        "6214.TW": "精誠", "3029.TW": "零壹", "2480.TW": "敦陽科", 
+        "6925.TWO": "意藍資訊", "6741.TWO": "宏碁資訊", "6690.TWO": "安碁資訊", "6752.TWO": "叡揚",
+        "7781.TWO": "昕力資*"
     }
     
     stock_results = []
@@ -74,7 +75,7 @@ def fetch_stocks():
                 price = float(hist['Close'].iloc[-1])
                 prev = float(hist['Close'].iloc[-2])
                 pct = ((price - prev) / prev) * 100
-                code_clean = ticker.split('.')[0]
+                code_clean = ticker.split('.')
                 stock_results.append({
                     "name": name, 
                     "code": code_clean, 
