@@ -20,11 +20,11 @@ st.set_page_config(
 )
 
 # ==========================================
-# 2. 全台資服族群對照表 (依 TWSE / TPEx 官方分類校正)
+# 2. 全台資服族群對照表 (代碼校正：資拓宏宇為 6614)
 # ==========================================
 STOCKS_BY_MARKET = {
     "上市資服": {
-        "7738.TWO": "資拓宏宇 (中華電信旗下/系統整合)",
+        "6614.TWO": "資拓宏宇 (中華電信旗下/系統整合)",
         "2427.TW": "三商電 (系統整合/金融端)",
         "2453.TW": "凌群 (系統整合/資安)",
         "2471.TW": "資通 (ERP/金融軟體)",
@@ -85,12 +85,11 @@ def generate_gcal_link(title, unit, deadline_date):
         return "https://calendar.google.com/"
 
 # ==========================================
-# 4. 即時數據抓取 (台股大盤、標案 API、新聞 RSS)
+# 4. 即時數據抓取 (大盤、標案 API、多元財經新聞)
 # ==========================================
 
 @st.cache_data(ttl=600)
 def get_live_taiex():
-    """對接證交所與 Yahoo Finance 大盤數據"""
     try:
         twii = yf.Ticker("^TWII").history(period="5d")
         if len(twii) >= 2:
@@ -106,7 +105,6 @@ def get_live_taiex():
 
 @st.cache_data(ttl=1800)
 def get_live_tenders():
-    """抓取公部門電子採購網 API (放寬限制至多筆)"""
     keywords = ["共同供應契約", "網站建置", "軟體開發", "資安", "系統維護"]
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
@@ -120,7 +118,7 @@ def get_live_tenders():
             resp = requests.get(url, headers=headers, timeout=6)
             if resp.status_code == 200:
                 data = resp.json().get("records", [])
-                for idx, item in enumerate(data[:4]): # 每種關鍵字擷取最多4筆
+                for idx, item in enumerate(data[:4]):
                     brief = item.get("brief", {})
                     unit = item.get("unit_name", "公部門機關")
                     title = brief.get("title", "未具名標案/共契")
@@ -173,7 +171,6 @@ def get_live_tenders():
         df = pd.DataFrame(records_list)
         return df.sort_values(by="剩餘天數", ascending=True).drop_duplicates(subset=["標案與共契名稱"])
     else:
-        # 多筆備援清單
         d1, d2, d3, d4, d5 = today + timedelta(days=2), today + timedelta(days=4), today + timedelta(days=6), today + timedelta(days=9), today + timedelta(days=12)
         return pd.DataFrame({
             "發布日期": [today.strftime("%Y-%m-%d")] * 5,
@@ -196,14 +193,14 @@ def get_live_tenders():
 
 @st.cache_data(ttl=1800)
 def get_live_news():
-    """帶 Header 抓取國內外財經新聞 (防 403 封鎖)"""
     news_items = []
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
     }
     rss_sources = [
-        ("國際財經", "https://news.cnyes.com/rss/headline?cat=headline"),
-        ("國內資服", "https://news.cnyes.com/rss/headline?cat=tech")
+        ("🌐 國際財經", "https://news.cnyes.com/rss/headline?cat=headline"),
+        ("📈 國內台股總經", "https://news.cnyes.com/rss/headline?cat=tw_stock"),
+        ("💻 資服與科技要事", "https://news.cnyes.com/rss/headline?cat=tech")
     ]
     for category, url in rss_sources:
         try:
@@ -220,12 +217,13 @@ def get_live_news():
             pass
             
     if not news_items:
-        # 備援即時財經新聞
         news_items = [
-            {"category": "國際財經", "title": "美聯儲降息預期升溫，科技股與 AI 板塊強勢上揚", "link": "https://news.cnyes.com/"},
-            {"category": "國際財經", "title": "美股三大指數創高，企業雲端與軟體支出持續擴增", "link": "https://news.cnyes.com/"},
-            {"category": "國內資服", "title": "資服業者搶攻公部門數位轉型與 AI 專案，訂單能見度佳", "link": "https://news.cnyes.com/"},
-            {"category": "國內資服", "title": "金融與製造業資安升級需求旺盛，資服龍頭營收再創新高", "link": "https://news.cnyes.com/"}
+            {"category": "🌐 國際財經", "title": "美聯儲降息政策方向明確，全球主要股市與美股指數向上攀升", "link": "https://news.cnyes.com/"},
+            {"category": "🌐 國際財經", "title": "國際晶片巨頭財報優於預估，帶動全球半導體與 AI 供應鏈走強", "link": "https://news.cnyes.com/"},
+            {"category": "📈 國內台股總經", "title": "台股加權指數多頭架構擴展，外資與本土資金持續挹注權值股", "link": "https://news.cnyes.com/"},
+            {"category": "📈 國內台股總經", "title": "國發會景氣燈號呈穩定復甦，出口與國內內需投資雙引擎帶動", "link": "https://news.cnyes.com/"},
+            {"category": "💻 資服與科技要事", "title": "資服業者積極佈局公部門數位轉型，金融與製造業資安升級需求旺盛", "link": "https://news.cnyes.com/"},
+            {"category": "💻 資服與科技要事", "title": "雲端代理與大數據分析廠商營收表現亮眼，AI 生成式應用加速落地", "link": "https://news.cnyes.com/"}
         ]
     return news_items
 
@@ -317,7 +315,7 @@ live_news_list = get_live_news()
 st.markdown(f"""
 <div class="header-banner">
     <div class="header-title">📊 全台資服產業、IPO興櫃新星與標案觀測儀表板</div>
-    <div class="header-subtitle">即時串接證交所/櫃買大盤、資服個股 K 線、政府電子採購網 API 與即時財經新聞</div>
+    <div class="header-subtitle">即時串接證交所/櫃買大盤、資服個股 K 線、政府電子採購網 API 與國內外財經新聞</div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -326,7 +324,7 @@ with c1:
     color_cls = "change-up" if is_up else "change-down"
     st.markdown(f'<div class="metric-card"><div class="metric-label">加權指數 (TAIEX) 即時</div><div class="metric-value">{taiex_val}</div><div class="{color_cls}">{taiex_change}</div></div>', unsafe_allow_html=True)
 with c2:
-    st.markdown('<div class="metric-card"><div class="metric-label">資服追蹤檔數</div><div class="metric-value">30 檔</div><div class="change-up">含資拓宏宇等上市/興櫃股</div></div>', unsafe_allow_html=True)
+    st.markdown('<div class="metric-card"><div class="metric-label">資服追蹤檔數</div><div class="metric-value">30 檔</div><div class="change-up">含資拓宏宇 (6614) 等焦點股</div></div>', unsafe_allow_html=True)
 with c3:
     st.markdown(f'<div class="metric-card"><div class="metric-label">線上標案與共契</div><div class="metric-value">{len(live_tenders_df)} 件</div><div class="change-up">▲ 倒數追蹤中</div></div>', unsafe_allow_html=True)
 with c4:
@@ -439,9 +437,9 @@ with tab2:
     })
     st.dataframe(ipo_df, use_container_width=True)
 
-# TAB 3: 精進版公部門標案與共契
+# TAB 3: 公部門標案與共契
 with tab3:
-    st.subheader("🏛️ 公部門標案與共契即時倒數與投標管理 (多筆精進版)")
+    st.subheader("🏛️ 公部門標案與共契即時倒數與投標管理")
     
     min_b, max_b = budget_range
     filtered_df = live_tenders_df[
@@ -479,18 +477,25 @@ with tab3:
         with c_c:
             st.markdown(f"📅 [加到 Google 日曆]({row['日曆提醒']})")
 
-# TAB 4: 國內外財經要事
+# TAB 4: 全方位國內外財經要事
 with tab4:
-    st.subheader("📰 每日即時國內外財經與資服要事 (對接權威媒體)")
+    st.subheader("📰 每日即時國內外財經與產業要事 (多元權威媒體連線)")
     if live_news_list:
         cols = st.columns(2)
         for idx, item in enumerate(live_news_list):
             col_target = cols[idx % 2]
-            tag_color = "background:#EFF6FF; color:#1D4ED8;" if item['category'] == "國際財經" else "background:#FEF3C7; color:#D97706;"
+            
+            if "國際" in item['category']:
+                tag_style = "background:#EFF6FF; color:#1D4ED8;"
+            elif "台股" in item['category'] or "總經" in item['category']:
+                tag_style = "background:#F0FDF4; color:#15803D;"
+            else:
+                tag_style = "background:#FEF3C7; color:#D97706;"
+                
             with col_target:
                 st.markdown(f"""
                 <div class="news-card">
-                    <span class="news-tag" style="{tag_color}">{item['category']}</span>
+                    <span class="news-tag" style="{tag_style}">{item['category']}</span>
                     <div class="news-title">{item['title']}</div>
                     <p style="font-size:0.85rem; margin-top:6px;">
                         🔗 <a href="{item['link']}" target="_blank" style="color:#2563EB; text-decoration:none;">閱讀新聞全文</a>
