@@ -11,14 +11,14 @@ def clean_html_text(raw_html):
         return ""
     clean_text = re.sub(r'<[^>]+>', '', str(raw_html))
     clean_text = clean_text.replace('\n', ' ').replace('\r', '').strip()
-    return clean_text[:60] + "..." if len(clean_text) > 60 else clean_text
+    return clean_text[:65] + "..." if len(clean_text) > 65 else clean_text
 
 def summarize_tender_with_ai(tender_title, unit_name, kw="", days_left=7):
     api_key = os.getenv("GEMINI_API_KEY")
     urgency_str = f"剩餘 {days_left} 天截止" if days_left >= 0 else "即將截止"
     
     if not api_key:
-        return f"  🤖 AI分析：【{kw}】相關需求，{urgency_str}，建議業務團隊評估投標門檻。"
+        return f"  🤖 AI評估：【{kw}】相關需求，{urgency_str}，建議團隊評估投標門檻。"
     
     try:
         genai.configure(api_key=api_key)
@@ -32,9 +32,9 @@ def summarize_tender_with_ai(tender_title, unit_name, kw="", days_left=7):
 【核心需求與建議】：做了什麼系統？適合何種團隊投標？"""
         response = model.generate_content(prompt)
         ai_text = response.text.replace("\n", " ").strip()
-        return f"  🤖 AI分析 ({urgency_str})：{ai_text}"
+        return f"  🤖 AI評估 ({urgency_str})：{ai_text}"
     except Exception:
-        return f"  🤖 AI分析 ({urgency_str})：含【{kw}】軟硬體與服務需求，請儘速評估投標規格。"
+        return f"  🤖 AI評估 ({urgency_str})：含【{kw}】軟硬體與服務需求，請儘速評估規格。"
 
 def fetch_news():
     news_items = []
@@ -42,7 +42,7 @@ def fetch_news():
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
     }
     rss_sources = [
-        ("🌐 國際財經", "https://news.cnyes.com/rss/headline?cat=headline"),
+        ("🌐 國際財經焦點", "https://news.cnyes.com/rss/headline?cat=headline"),
         ("📈 國內總經與台股", "https://news.cnyes.com/rss/headline?cat=tw_stock"),
         ("💻 資服與科技要事", "https://news.cnyes.com/rss/headline?cat=tech")
     ]
@@ -53,23 +53,19 @@ def fetch_news():
                 feed = feedparser.parse(resp.content)
                 for entry in feed.entries[:2]:
                     title = getattr(entry, 'title', '新聞要事').strip()
-                    news_link = str(getattr(entry, 'link', '') or getattr(entry, 'guid', '')).strip()
-                    if not news_link:
-                        news_link = "https://news.cnyes.com/news/id/5850001"
-                        
                     raw_summary = getattr(entry, 'summary', '') or getattr(entry, 'description', '')
                     summary_text = clean_html_text(raw_summary)
-                    summary_line = f"\n  💡 重點：{summary_text}" if summary_text else ""
+                    summary_line = f"\n  💡 導讀重點：{summary_text}" if summary_text else ""
                     
-                    news_items.append(f"• [{category}] {title}{summary_line}\n  🔗 閱讀全文：{news_link}")
+                    news_items.append(f"• [{category}] {title}{summary_line}")
         except Exception:
             pass
             
     if not news_items:
         news_items = [
-            "• [🌐 國際財經] 美聯儲降息預期升溫，全球股市與美股市場強勢上揚\n  💡 重點：全球貨幣政策轉向，科技與半導體族群資金充沛。\n  🔗 閱讀全文：https://news.cnyes.com/news/id/5850001",
-            "• [📈 國內總經與台股] 加權指數多頭架構延伸，企業資本支出與內需雙動能熱絡\n  💡 重點：出口數據強勁，AI 供應鏈帶動台股指數高檔震盪。\n  🔗 閱讀全文：https://news.cnyes.com/news/id/5850002",
-            "• [💻 資服與科技要事] 資服與數位雲端業者搶攻公部門數位轉型，訂單能見度佳\n  💡 重點：公部門雲端與資安需求大增，本土資服業者營運看好。\n  🔗 閱讀全文：https://news.cnyes.com/news/id/5850003"
+            "• [🌐 國際財經焦點] 美聯儲降息預期升溫，全球股市與美股市場強勢上揚\n  💡 導讀重點：全球貨幣政策轉向，科技與半導體族群資金充沛。",
+            "• [📈 國內總經與台股] 加權指數多頭架構延伸，企業資本支出與內需雙動能熱絡\n  💡 導讀重點：出口數據強勁，AI 供應鏈帶動台股指數高檔震盪。",
+            "• [💻 資服與科技要事] 資服與數位雲端業者搶攻公部門數位轉型，訂單能見度佳\n  💡 導讀重點：公部門雲端與資安需求大增，本土資服業者營運看好。"
         ]
     return "\n\n".join(news_items)
 
@@ -130,12 +126,8 @@ def fetch_ipo_news():
         matched_news = []
         for entry in feed.entries:
             title = entry.title.strip()
-            news_link = str(getattr(entry, 'link', '') or getattr(entry, 'guid', '')).strip()
-            if not news_link:
-                news_link = "https://news.cnyes.com/news/id/5850002"
-                
             if any(kw in title for kw in ipo_keywords):
-                matched_news.append(f"• 🚀 {title}\n  🔗 閱讀全文：{news_link}")
+                matched_news.append(f"• 🚀 {title}")
                 if len(matched_news) >= 2:
                     break
                     
@@ -216,11 +208,11 @@ def main():
     
     report = (
         f"📊 【每日情報晨報】{today}\n\n"
-        f"🌐 一、全方位國內外財經要事 (含重點摘要)：\n{news}\n\n"
+        f"💡 一、AI 財經與資服要事導讀：\n{news}\n\n"
         f"🚀 二、資服業 IPO 與興櫃焦點：\n{ipo_info}\n\n"
         f"📈 三、資服與數位雲端行情速報：\n{stocks}\n\n"
-        f"🏛️ 四、公部門標案與共契即時情報 (每日更新與 AI 解析)：\n{tenders}\n"
-        f"🔍 標案詳細檢索工具：{viewer_url}\n\n"
+        f"🏛️ 四、公部門標案與共契即時情報 (每日更新與 AI 評估)：\n{tenders}\n"
+        f"🔍 標案檢索服務入口：{viewer_url}\n\n"
         f"💡 點擊開啟 Streamlit 彩色圖表儀表板：\n"
         f"{dashboard_url}"
     )
