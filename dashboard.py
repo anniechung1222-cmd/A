@@ -184,7 +184,7 @@ def get_live_tenders():
             "類別": ["共同供應契約", "網站建置", "軟體開發", "共同供應契約", "資安/軟體"],
             "截止投標日": [d1.strftime("%Y-%m-%d"), d2.strftime("%Y-%m-%d"), d3.strftime("%Y-%m-%d"), d4.strftime("%Y-%m-%d"), d5.strftime("%Y-%m-%d")],
             "緊迫程度": ["🔴 極緊急 (剩 2 天)", "🔴 極緊急 (剩 4 天)", "🟡 倒數中 (剩 6 天)", "🟢 充裕 (剩 9 天)", "🟢 充裕 (剩 12 天)"],
-            "剩餘天數":,
+            "剩餘天數": [2, 4, 6, 9, 12],
             "日曆提醒": [generate_gcal_link("政府軟體共契案", "數位發展部", d1)] * 5
         })
 
@@ -207,7 +207,6 @@ def get_live_news():
                 for entry in feed.entries[:3]:
                     title = getattr(entry, 'title', '財經新聞要事').strip()
                     
-                    # 抓取精確文章專屬 URL
                     news_link = ""
                     if hasattr(entry, 'link') and entry.link:
                         news_link = str(entry.link).strip()
@@ -222,7 +221,6 @@ def get_live_news():
                     if not news_link:
                         news_link = "https://news.cnyes.com/news/id/5850001"
                         
-                    # 擷取並清理新聞摘要
                     raw_summary = getattr(entry, 'summary', '') or getattr(entry, 'description', '')
                     summary_text = clean_html_text(raw_summary)
                     
@@ -488,7 +486,6 @@ with tab2:
 with tab3:
     st.subheader("🏛️ 公部門標案與共契即時倒數與投標管理")
     
-    # 頂部便利檢索工具連結與聲明
     st.info("🔍 **公部門標案快速查詢工具**：[點此開啟 g0v 政府電子採購網閱覽器 ↗](https://ronnywang.github.io/pcc-viewer/index.html)（每日自動更新公部門最新標案與共契資訊）")
     
     min_b, max_b = budget_range
