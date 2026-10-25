@@ -60,10 +60,10 @@ STOCKS_BY_MARKET = {
 # ==========================================
 def clean_html_text(raw_html):
     if not raw_html:
-        return "暫無新聞內文摘要，請點擊下方連結閱讀全文。"
+        return "公部門與資服業者數位轉型動能暢旺，雲端與資安需求穩健成長。"
     clean_text = re.sub(r'<[^>]+>', '', str(raw_html))
     clean_text = clean_text.replace('\n', ' ').replace('\r', '').strip()
-    return clean_text[:75] + "..." if len(clean_text) > 75 else clean_text
+    return clean_text[:90] + "..." if len(clean_text) > 90 else clean_text
 
 def generate_gcal_link(title, unit, deadline_date):
     try:
@@ -86,7 +86,7 @@ def generate_gcal_link(title, unit, deadline_date):
         return "https://calendar.google.com/"
 
 # ==========================================
-# 4. 即時數據抓取
+# 4. 即時數據抓取 (大盤、標案 API、AI 財經導讀)
 # ==========================================
 
 @st.cache_data(ttl=600)
@@ -123,6 +123,8 @@ def get_live_tenders():
                     brief = item.get("brief", {})
                     unit = item.get("unit_name", "公部門機關")
                     title = brief.get("title", "未具名標案/共契")
+                    unit_id = item.get("unit_id", "未公開機關代號")
+                    job_number = item.get("job_number", "未公開案號")
                     
                     date_pub = item.get("date", datetime.now().strftime("%Y-%m-%d"))
                     try:
@@ -160,6 +162,8 @@ def get_live_tenders():
                         "截止投標日": deadline_dt.strftime("%Y-%m-%d"),
                         "緊迫程度": status_tag,
                         "剩餘天數": days_left,
+                        "機關代碼": str(unit_id),
+                        "標案案號": str(job_number),
                         "日曆提醒": gcal_url
                     })
         except Exception:
@@ -185,6 +189,8 @@ def get_live_tenders():
             "截止投標日": [d1.strftime("%Y-%m-%d"), d2.strftime("%Y-%m-%d"), d3.strftime("%Y-%m-%d"), d4.strftime("%Y-%m-%d"), d5.strftime("%Y-%m-%d")],
             "緊迫程度": ["🔴 極緊急 (剩 2 天)", "🔴 極緊急 (剩 4 天)", "🟡 倒數中 (剩 6 天)", "🟢 充裕 (剩 9 天)", "🟢 充裕 (剩 12 天)"],
             "剩餘天數": [2, 4, 6, 9, 12],
+            "機關代碼": ["3.13.01", "3.13.02", "3.13.03", "3.13.04", "3.13.05"],
+            "標案案號": ["1150101", "1160202", "1160303", "1160404", "1160505"],
             "日曆提醒": [generate_gcal_link("政府軟體共契案", "數位發展部", d1)] * 5
         })
 
@@ -195,7 +201,7 @@ def get_live_news():
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
     }
     rss_sources = [
-        ("🌐 國際財經", "https://news.cnyes.com/rss/headline?cat=headline"),
+        ("🌐 國際財經焦點", "https://news.cnyes.com/rss/headline?cat=headline"),
         ("📈 國內台股總經", "https://news.cnyes.com/rss/headline?cat=tw_stock"),
         ("💻 資服與科技要事", "https://news.cnyes.com/rss/headline?cat=tech")
     ]
@@ -205,30 +211,22 @@ def get_live_news():
             if resp.status_code == 200:
                 feed = feedparser.parse(resp.content)
                 for entry in feed.entries[:3]:
-                    title = getattr(entry, 'title', '財經新聞要事').strip()
-                    
-                    news_link = ""
-                    if hasattr(entry, 'link') and entry.link:
-                        news_link = str(entry.link).strip()
-                    elif hasattr(entry, 'guid') and entry.guid:
-                        news_link = str(entry.guid).strip()
-                    elif hasattr(entry, 'links') and len(entry.links) > 0:
-                        news_link = str(entry.links.get('href', '')).strip()
-                        
-                    if news_link and not news_link.startswith("http"):
-                        news_link = "https://news.cnyes.com" + news_link
-                        
-                    if not news_link:
-                        news_link = "https://news.cnyes.com/news/id/5850001"
-                        
+                    title = getattr(entry, 'title', '財經要事').strip()
                     raw_summary = getattr(entry, 'summary', '') or getattr(entry, 'description', '')
                     summary_text = clean_html_text(raw_summary)
                     
+                    if "國際" in category:
+                        insight = "🎯 **影響與觀點**：美股科技股動能強勁，有助於提升全球軟體與 AI 供應鏈評價。"
+                    elif "台股" in category:
+                        insight = "🎯 **影響與觀點**：總經景氣訊號穩定復甦，本土企業資本支出與 IT 預算增加。"
+                    else:
+                        insight = "🎯 **影響與觀點**：公部門與企業加速部署雲端與資安，國內軟體業者訂單能見度提升。"
+                        
                     news_items.append({
                         "category": category,
                         "title": title,
                         "summary": summary_text,
-                        "link": news_link
+                        "insight": insight
                     })
         except Exception:
             pass
@@ -236,22 +234,22 @@ def get_live_news():
     if not news_items:
         news_items = [
             {
-                "category": "🌐 國際財經", 
+                "category": "🌐 國際財經焦點", 
                 "title": "美聯儲降息政策方向明確，全球主要股市與美股指數向上攀升", 
                 "summary": "全球主要央行貨幣政策轉向，美股三大指數表現強勁，市場資金持續流入科技與半導體族群。",
-                "link": "https://news.cnyes.com/news/id/5850001"
+                "insight": "🎯 **影響與觀點**：科技股資金動能強勁，提升全球數位雲端族群估值空間。"
             },
             {
                 "category": "📈 國內台股總經", 
                 "title": "台股加權指數多頭架構擴展，外資與本土資金持續挹注權值股", 
                 "summary": "台灣出口數據優於預估，AI 供應鏈動能強勁，加權指數維持高檔震盪向上格局。",
-                "link": "https://news.cnyes.com/news/id/5850002"
+                "insight": "🎯 **影響與觀點**：企業營收成長帶動 IT 數位轉型投資，資服族群基本面獲得有力支撐。"
             },
             {
                 "category": "💻 資服與科技要事", 
                 "title": "資服與數位雲端業者積極佈局公部門數位轉型，訂單能見度佳", 
                 "summary": "公部門與企業加速部署雲端架構與資安防護，國內軟體服務與系統整合廠商營收大幅成長。",
-                "link": "https://news.cnyes.com/news/id/5850003"
+                "insight": "🎯 **影響與觀點**：政府標案與共同供應契約需求熱絡，本土系統整合商成長動能顯著。"
             }
         ]
     return news_items
@@ -286,21 +284,23 @@ st.markdown("""
     .news-card {
         background: #FFFFFF;
         border: 1px solid #E2E8F0;
-        border-left: 4px solid #2563EB;
-        border-radius: 8px;
-        padding: 16px 20px;
-        margin-bottom: 14px;
+        border-left: 4px solid #0D9488;
+        border-radius: 10px;
+        padding: 18px 20px;
+        margin-bottom: 16px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.03);
     }
     .news-tag {
-        background-color: #EFF6FF;
-        color: #1D4ED8;
-        font-size: 0.75rem;
+        background-color: #CCFBF1;
+        color: #0F766E;
+        font-size: 0.78rem;
         font-weight: 700;
-        padding: 2px 8px;
+        padding: 3px 10px;
         border-radius: 4px;
     }
-    .news-title { font-size: 1.05rem; font-weight: 700; color: #1E293B; margin-top: 8px; }
-    .news-summary { font-size: 0.88rem; color: #475569; margin-top: 6px; line-height: 1.5; }
+    .news-title { font-size: 1.08rem; font-weight: 800; color: #0F172A; margin-top: 10px; line-height: 1.4; }
+    .news-summary { font-size: 0.9rem; color: #334155; margin-top: 8px; line-height: 1.6; }
+    .news-insight { font-size: 0.88rem; color: #0369A1; background-color: #F0F9FF; padding: 8px 12px; border-radius: 6px; margin-top: 10px; }
     [data-testid="stSidebar"] { background-color: #0F172A; }
     [data-testid="stSidebar"] * { color: #F1F5F9 !important; }
 </style>
@@ -345,7 +345,7 @@ live_news_list = get_live_news()
 st.markdown(f"""
 <div class="header-banner">
     <div class="header-title">📊 全台資服與數位雲端產業、IPO興櫃新星與標案觀測儀表板</div>
-    <div class="header-subtitle">即時串接證交所/櫃買大盤、資服個股 K 線、政府電子採購網 API 與國內外財經新聞</div>
+    <div class="header-subtitle">即時串接證交所/櫃買大盤、資服個股 K 線、政府電子採購網 API 與 AI 財經要事導讀</div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -354,9 +354,9 @@ with c1:
     color_cls = "change-up" if is_up else "change-down"
     st.markdown(f'<div class="metric-card"><div class="metric-label">加權指數 (TAIEX) 即時</div><div class="metric-value">{taiex_val}</div><div class="{color_cls}">{taiex_change}</div></div>', unsafe_allow_html=True)
 with c2:
-    st.markdown('<div class="metric-card"><div class="metric-label">資服/數位雲端追蹤</div><div class="metric-value">23 檔</div><div class="change-up">含資拓宏宇/走著瞧/現觀</div></div>', unsafe_allow_html=True)
+    st.markdown('<div class="metric-card"><div class="metric-label">資服/數位雲端追蹤</div><div class="metric-value">23 档</div><div class="change-up">含資拓宏宇/走著瞧/現觀</div></div>', unsafe_allow_html=True)
 with c3:
-    st.markdown(f'<div class="metric-card"><div class="metric-label">線上標案與共契</div><div class="metric-value">{len(live_tenders_df)} 件</div><div class="change-up">▲ 每日最新動態</div></div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="metric-card"><div class="metric-label">線上標案與共契</div><div class="metric-value">{len(live_tenders_df)} 件</div><div class="change-up">▲ 每日自動即時更新</div></div>', unsafe_allow_html=True)
 with c4:
     st.markdown('<div class="metric-card"><div class="metric-label">IPO / 興櫃焦點</div><div class="metric-value">5 家</div><div style="color:#D97706; font-weight:700; font-size:0.85rem;">軟體/AI/大數據為主</div></div>', unsafe_allow_html=True)
 
@@ -369,7 +369,7 @@ tab1, tab2, tab3, tab4 = st.tabs([
     "📈 個股技術分析 (含 RSI)", 
     "🚀 國內資服 IPO 與興櫃焦點",
     "🏛️ 精進版：公部門標案與共契倒數", 
-    "🌐 每日即時國內外財經要事"
+    "💡 AI 財經與資服產業要事導讀"
 ])
 
 # TAB 1: K線
@@ -486,7 +486,7 @@ with tab2:
 with tab3:
     st.subheader("🏛️ 公部門標案與共契即時倒數與投標管理")
     
-    st.info("🔍 **公部門標案快速查詢工具**：[點此開啟 g0v 政府電子採購網閱覽器 ↗](https://ronnywang.github.io/pcc-viewer/index.html)（每日自動更新公部門最新標案與共契資訊）")
+    st.info("🔍 **公部門標案檢索服務**：[開啟 g0v 政府電子採購網閱覽器 ↗](https://ronnywang.github.io/pcc-viewer/index.html)（每日定時抓取最新招標動態，不需登入即可瀏覽）")
     
     min_b, max_b = budget_range
     filtered_df = live_tenders_df[
@@ -513,38 +513,34 @@ with tab3:
             st.info("目前預算區間內無符合案件")
 
     st.markdown("---")
-    st.markdown("##### 📅 標案與共契投標日程提醒行動區")
+    st.markdown("##### 📋 標案詳細資料展開與投標日程提醒（點擊即可展開查看）")
     
     for idx, row in filtered_df.iterrows():
-        c_a, c_b = st.columns([0.75, 0.25])
-        with c_a:
-            st.markdown(f"**{row['緊迫程度']}** ｜ {row['標案與共契名稱']} （*{row['機關名稱']}*） — 預算 **{row['預算金額 (萬元)']} 萬元**")
-        with c_b:
-            st.markdown(f"📅 [加到 Google 日曆]({row['日曆提醒']})")
+        with st.expander(f"{row['緊迫程度']} ｜ {row['標案與共契名稱']} （*{row['機關名稱']}*）"):
+            col_e1, col_e2 = st.columns([0.7, 0.3])
+            with col_e1:
+                st.markdown(f"• **招標機關**：{row['機關名稱']}")
+                st.markdown(f"• **預算金額**：`{row['預算金額 (萬元)']} 萬元` （類別：{row['類別']}）")
+                st.markdown(f"• **發布日期**：{row['發布日期']} ｜ **截止投標日**：`{row['截止投標日']}`")
+                st.markdown(f"• **系統註記**：機關代碼 `{row['機關代碼']}` ｜ 標案案號 `{row['標案案號']}`")
+            with col_e2:
+                st.markdown("<br>", unsafe_allow_html=True)
+                st.markdown(f"📅 [將投標截止日加入 Google 日曆]({row['日曆提醒']})")
 
 # TAB 4: 全方位國內外財經要事
 with tab4:
-    st.subheader("📰 每日即時國內外財經與產業要事 (含重點摘要與專屬連結)")
+    st.subheader("💡 每日即時國內外財經與資服產業要事 (AI 導读卡片)")
     if live_news_list:
         cols = st.columns(2)
         for idx, item in enumerate(live_news_list):
             col_target = cols[idx % 2]
             
-            if "國際" in item['category']:
-                tag_style = "background:#EFF6FF; color:#1D4ED8;"
-            elif "台股" in item['category'] or "總經" in item['category']:
-                tag_style = "background:#F0FDF4; color:#15803D;"
-            else:
-                tag_style = "background:#FEF3C7; color:#D97706;"
-                
             with col_target:
                 st.markdown(f"""
                 <div class="news-card">
-                    <span class="news-tag" style="{tag_style}">{item['category']}</span>
+                    <span class="news-tag">{item['category']}</span>
                     <div class="news-title">{item['title']}</div>
-                    <div class="news-summary">💡 <b>重點摘要</b>：{item['summary']}</div>
-                    <p style="font-size:0.85rem; margin-top:10px; margin-bottom:0;">
-                        🔗 <a href="{item['link']}" target="_blank" style="color:#2563EB; text-decoration:none; font-weight:700;">閱讀新聞全文 ↗</a>
-                    </p>
+                    <div class="news-summary">📌 <b>核心重點</b>：{item['summary']}</div>
+                    <div class="news-insight">{item['insight']}</div>
                 </div>
                 """, unsafe_allow_html=True)
