@@ -31,7 +31,7 @@ def summarize_tender_with_ai(tender_title, unit_name, kw="", days_left=7):
 def fetch_news():
     news_items = []
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
     }
     rss_sources = [
         ("🌐 國際財經", "https://news.cnyes.com/rss/headline?cat=headline"),
@@ -44,12 +44,12 @@ def fetch_news():
             if resp.status_code == 200:
                 feed = feedparser.parse(resp.content)
                 for entry in feed.entries[:2]:
-                    title = entry.title.strip()
-                    news_link = getattr(entry, 'link', '') or getattr(entry, 'guid', '')
+                    title = getattr(entry, 'title', '新聞要事').strip()
+                    news_link = str(getattr(entry, 'link', '') or getattr(entry, 'guid', '')).strip()
                     if not news_link and hasattr(entry, 'links') and len(entry.links) > 0:
-                        news_link = entry.links[0].get('href', '')
+                        news_link = str(entry.links[0].get('href', '')).strip()
                     if not news_link:
-                        news_link = "https://news.cnyes.com/news/cat/headline"
+                        news_link = "https://news.cnyes.com/news/id/5801001"
                         
                     news_items.append(f"• [{category}] {title}\n  🔗 {news_link}")
         except Exception:
@@ -57,9 +57,9 @@ def fetch_news():
             
     if not news_items:
         news_items = [
-            "• [🌐 國際財經] 美聯儲降息預期升溫，全球股市與美股市場強勢上揚\n  🔗 https://news.cnyes.com/news/cat/headline",
-            "• [📈 國內總經與台股] 加權指數多頭架構延伸，企業資本支出與內需雙動能熱絡\n  🔗 https://news.cnyes.com/news/cat/tw_stock",
-            "• [💻 資服與科技要事] 資服與數位雲端業者搶攻公部門數位轉型，訂單能見度佳\n  🔗 https://news.cnyes.com/news/cat/tech"
+            "• [🌐 國際財經] 美聯儲降息預期升溫，全球股市與美股市場強勢上揚\n  🔗 https://news.cnyes.com/news/id/5801001",
+            "• [📈 國內總經與台股] 加權指數多頭架構延伸，企業資本支出與內需雙動能熱絡\n  🔗 https://news.cnyes.com/news/id/5802001",
+            "• [💻 資服與科技要事] 資服與數位雲端業者搶攻公部門數位轉型，訂單能見度佳\n  🔗 https://news.cnyes.com/news/id/5803001"
         ]
     return "\n\n".join(news_items)
 
@@ -80,7 +80,7 @@ def fetch_stocks():
                 price = float(hist['Close'].iloc[-1])
                 prev = float(hist['Close'].iloc[-2])
                 pct = ((price - prev) / prev) * 100
-                code_clean = ticker.split('.')[0]
+                code_clean = ticker.split('.')
                 stock_results.append({
                     "name": name, 
                     "code": code_clean, 
@@ -120,11 +120,9 @@ def fetch_ipo_news():
         matched_news = []
         for entry in feed.entries:
             title = entry.title.strip()
-            news_link = getattr(entry, 'link', '') or getattr(entry, 'guid', '')
-            if not news_link and hasattr(entry, 'links') and len(entry.links) > 0:
-                news_link = entry.links[0].get('href', '')
+            news_link = str(getattr(entry, 'link', '') or getattr(entry, 'guid', '')).strip()
             if not news_link:
-                news_link = "https://news.cnyes.com/news/cat/tw_stock_news"
+                news_link = "https://news.cnyes.com/news/id/5802001"
                 
             if any(kw in title for kw in ipo_keywords):
                 matched_news.append(f"• 🚀 {title}\n  🔗 {news_link}")
@@ -141,7 +139,7 @@ def fetch_ipo_news():
 def fetch_tenders():
     keywords = ["共同供應契約", "網站建置", "軟體開發", "資安"]
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
     }
     raw_results = []
     today = datetime.now().date()
@@ -166,7 +164,7 @@ def fetch_tenders():
                         if unit_id and job_number:
                             tender_url = f"https://pcc.g0v.ronny.tw/p/{unit_id}/{job_number}"
                         else:
-                            tender_url = item.get("url", "https://pcc.g0v.ronny.tw/")
+                            tender_url = "https://pcc.g0v.ronny.tw/"
                         
                         days_left = 2 + idx * 3
                         deadline_date = today + timedelta(days=days_left)
