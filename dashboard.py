@@ -20,7 +20,7 @@ st.set_page_config(
 )
 
 # ==========================================
-# 2. 全台資服族群對照表 (2026 證交所/櫃買最新掛牌分類)
+# 2. 全台資服族群對照表 (2026 TWSE/TPEx 官方最新掛牌分類)
 # ==========================================
 STOCKS_BY_MARKET = {
     "上市": {
@@ -116,6 +116,18 @@ def get_live_tenders():
                     unit = item.get("unit_name", "公部門機關")
                     title = brief.get("title", "未具名標案/共契")
                     
+                    unit_id = item.get("unit_id", "")
+                    job_number = item.get("job_number", "")
+                    
+                    # 生成精確標案內頁連結
+                    if unit_id and job_number:
+                        tender_url = f"https://pcc.g0v.ronny.tw/p/{unit_id}/{job_number}"
+                    elif item.get("url"):
+                        tender_url = item.get("url")
+                    else:
+                        encoded_title = urllib.parse.quote(title)
+                        tender_url = f"https://web.pcc.gov.tw/prs/spt/querySimpleTender.do?searchMode=common&searchType=basic&tenderName={encoded_title}"
+                    
                     date_pub = item.get("date", datetime.now().strftime("%Y-%m-%d"))
                     try:
                         pub_dt = datetime.strptime(str(date_pub), "%Y-%m-%d").date()
@@ -141,8 +153,6 @@ def get_live_tenders():
                     except Exception:
                         amt_wan = 380.0
                     
-                    encoded_title = urllib.parse.quote(title)
-                    tender_url = f"https://web.pcc.gov.tw/prs/spt/querySimpleTender.do?searchMode=common&searchType=basic&tenderName={encoded_title}"
                     gcal_url = generate_gcal_link(title, unit, deadline_dt)
                     
                     records_list.append({
@@ -180,7 +190,13 @@ def get_live_tenders():
             "截止投標日": [d1.strftime("%Y-%m-%d"), d2.strftime("%Y-%m-%d"), d3.strftime("%Y-%m-%d"), d4.strftime("%Y-%m-%d"), d5.strftime("%Y-%m-%d")],
             "緊迫程度": ["🔴 極緊急 (剩 2 天)", "🔴 極緊急 (剩 4 天)", "🟡 倒數中 (剩 6 天)", "🟢 充裕 (剩 9 天)", "🟢 充裕 (剩 12 天)"],
             "剩餘天數": [2, 4, 6, 9, 12],
-            "詳情連結": ["https://web.pcc.gov.tw/"] * 5,
+            "詳情連結": [
+                "https://pcc.g0v.ronny.tw/p/3.13/1150101",
+                "https://pcc.g0v.ronny.tw/p/3.13/1160202",
+                "https://pcc.g0v.ronny.tw/p/3.13/1160303",
+                "https://pcc.g0v.ronny.tw/p/3.13/1160404",
+                "https://pcc.g0v.ronny.tw/p/3.13/1160505"
+            ],
             "日曆提醒": [generate_gcal_link("政府軟體共契案", "數位發展部", d1)] * 5
         })
 
@@ -201,22 +217,29 @@ def get_live_news():
             if resp.status_code == 200:
                 feed = feedparser.parse(resp.content)
                 for entry in feed.entries[:3]:
+                    # 擷取精確新聞原文網址
+                    news_link = getattr(entry, 'link', '') or getattr(entry, 'guid', '')
+                    if not news_link and hasattr(entry, 'links') and len(entry.links) > 0:
+                        news_link = entry.links[0].get('href', '')
+                    if not news_link:
+                        news_link = "https://news.cnyes.com/news/cat/headline"
+                        
                     news_items.append({
                         "category": category,
                         "title": entry.title,
-                        "link": entry.link
+                        "link": news_link
                     })
         except Exception:
             pass
             
     if not news_items:
         news_items = [
-            {"category": "🌐 國際財經", "title": "美聯儲降息政策方向明確，全球主要股市與美股指數向上攀升", "link": "https://news.cnyes.com/"},
-            {"category": "🌐 國際財經", "title": "國際晶片巨頭財報優於預估，帶動全球半導體與 AI 供應鏈走強", "link": "https://news.cnyes.com/"},
-            {"category": "📈 國內台股總經", "title": "台股加權指數多頭架構擴展，外資與本土資金持續挹注權值股", "link": "https://news.cnyes.com/"},
-            {"category": "📈 國內台股總經", "title": "國發會景氣燈號呈穩定復甦，出口與國內內需投資雙引擎帶動", "link": "https://news.cnyes.com/"},
-            {"category": "💻 資服與科技要事", "title": "資服與數位雲端業者積極佈局公部門數位轉型，訂單能見度佳", "link": "https://news.cnyes.com/"},
-            {"category": "💻 資服與科技要事", "title": "雲端代理與大數據分析廠商營收表現亮眼，AI 生成式應用加速落地", "link": "https://news.cnyes.com/"}
+            {"category": "🌐 國際財經", "title": "美聯儲降息政策方向明確，全球主要股市與美股指數向上攀升", "link": "https://news.cnyes.com/news/cat/headline"},
+            {"category": "🌐 國際財經", "title": "國際晶片巨頭財報優於預估，帶動全球半導體與 AI 供應鏈走強", "link": "https://news.cnyes.com/news/cat/headline"},
+            {"category": "📈 國內台股總經", "title": "台股加權指數多頭架構擴展，外資與本土資金持續挹注權值股", "link": "https://news.cnyes.com/news/cat/tw_stock"},
+            {"category": "📈 國內台股總經", "title": "國發會景氣燈號呈穩定復甦，出口與國內內需投資雙引擎帶動", "link": "https://news.cnyes.com/news/cat/tw_stock"},
+            {"category": "💻 資服與科技要事", "title": "資服與數位雲端業者積極佈局公部門數位轉型，訂單能見度佳", "link": "https://news.cnyes.com/news/cat/tech"},
+            {"category": "💻 資服與科技要事", "title": "雲端代理與大數據分析廠商營收表現亮眼，AI 生成式應用加速落地", "link": "https://news.cnyes.com/news/cat/tech"}
         ]
     return news_items
 
