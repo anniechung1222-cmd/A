@@ -354,7 +354,7 @@ with c1:
     color_cls = "change-up" if is_up else "change-down"
     st.markdown(f'<div class="metric-card"><div class="metric-label">加權指數 (TAIEX) 即時</div><div class="metric-value">{taiex_val}</div><div class="{color_cls}">{taiex_change}</div></div>', unsafe_allow_html=True)
 with c2:
-    st.markdown('<div class="metric-card"><div class="metric-label">資服/數位雲端追蹤</div><div class="metric-value">23 档</div><div class="change-up">含資拓宏宇/走著瞧/現觀</div></div>', unsafe_allow_html=True)
+    st.markdown('<div class="metric-card"><div class="metric-label">資服/數位雲端追蹤</div><div class="metric-value">23 檔</div><div class="change-up">含資拓宏宇/走著瞧/現觀</div></div>', unsafe_allow_html=True)
 with c3:
     st.markdown(f'<div class="metric-card"><div class="metric-label">線上標案與共契</div><div class="metric-value">{len(live_tenders_df)} 件</div><div class="change-up">▲ 每日自動即時更新</div></div>', unsafe_allow_html=True)
 with c4:
@@ -529,7 +529,7 @@ with tab3:
 
 # TAB 4: 全方位國內外財經要事
 with tab4:
-    st.subheader("💡 每日即時國內外財經與資服產業要事 (AI 導读卡片)")
+    st.subheader("💡 每日即時國內外財經與資服產業要事 (AI 導讀卡片)")
     if live_news_list:
         cols = st.columns(2)
         for idx, item in enumerate(live_news_list):
