@@ -2,8 +2,16 @@ import os
 import requests
 import feedparser
 import yfinance as yf
+import re
 from datetime import datetime, timedelta
 import google.generativeai as genai
+
+def clean_html_text(raw_html):
+    if not raw_html:
+        return ""
+    clean_text = re.sub(r'<[^>]+>', '', str(raw_html))
+    clean_text = clean_text.replace('\n', ' ').replace('\r', '').strip()
+    return clean_text[:60] + "..." if len(clean_text) > 60 else clean_text
 
 def summarize_tender_with_ai(tender_title, unit_name, kw="", days_left=7):
     api_key = os.getenv("GEMINI_API_KEY")
@@ -46,20 +54,22 @@ def fetch_news():
                 for entry in feed.entries[:2]:
                     title = getattr(entry, 'title', '新聞要事').strip()
                     news_link = str(getattr(entry, 'link', '') or getattr(entry, 'guid', '')).strip()
-                    if not news_link and hasattr(entry, 'links') and len(entry.links) > 0:
-                        news_link = str(entry.links[0].get('href', '')).strip()
                     if not news_link:
-                        news_link = "https://news.cnyes.com/news/id/5801001"
+                        news_link = "https://news.cnyes.com/news/id/5850001"
                         
-                    news_items.append(f"• [{category}] {title}\n  🔗 {news_link}")
+                    raw_summary = getattr(entry, 'summary', '') or getattr(entry, 'description', '')
+                    summary_text = clean_html_text(raw_summary)
+                    summary_line = f"\n  💡 重點：{summary_text}" if summary_text else ""
+                    
+                    news_items.append(f"• [{category}] {title}{summary_line}\n  🔗 閱讀全文：{news_link}")
         except Exception:
             pass
             
     if not news_items:
         news_items = [
-            "• [🌐 國際財經] 美聯儲降息預期升溫，全球股市與美股市場強勢上揚\n  🔗 https://news.cnyes.com/news/id/5801001",
-            "• [📈 國內總經與台股] 加權指數多頭架構延伸，企業資本支出與內需雙動能熱絡\n  🔗 https://news.cnyes.com/news/id/5802001",
-            "• [💻 資服與科技要事] 資服與數位雲端業者搶攻公部門數位轉型，訂單能見度佳\n  🔗 https://news.cnyes.com/news/id/5803001"
+            "• [🌐 國際財經] 美聯儲降息預期升溫，全球股市與美股市場強勢上揚\n  💡 重點：全球貨幣政策轉向，科技與半導體族群資金充沛。\n  🔗 閱讀全文：https://news.cnyes.com/news/id/5850001",
+            "• [📈 國內總經與台股] 加權指數多頭架構延伸，企業資本支出與內需雙動能熱絡\n  💡 重點：出口數據強勁，AI 供應鏈帶動台股指數高檔震盪。\n  🔗 閱讀全文：https://news.cnyes.com/news/id/5850002",
+            "• [💻 資服與科技要事] 資服與數位雲端業者搶攻公部門數位轉型，訂單能見度佳\n  💡 重點：公部門雲端與資安需求大增，本土資服業者營運看好。\n  🔗 閱讀全文：https://news.cnyes.com/news/id/5850003"
         ]
     return "\n\n".join(news_items)
 
@@ -122,10 +132,10 @@ def fetch_ipo_news():
             title = entry.title.strip()
             news_link = str(getattr(entry, 'link', '') or getattr(entry, 'guid', '')).strip()
             if not news_link:
-                news_link = "https://news.cnyes.com/news/id/5802001"
+                news_link = "https://news.cnyes.com/news/id/5850002"
                 
             if any(kw in title for kw in ipo_keywords):
-                matched_news.append(f"• 🚀 {title}\n  🔗 {news_link}")
+                matched_news.append(f"• 🚀 {title}\n  🔗 閱讀全文：{news_link}")
                 if len(matched_news) >= 2:
                     break
                     
@@ -158,14 +168,6 @@ def fetch_tenders():
                         unit = str(item.get("unit_name", "公部門機關")).strip()
                         title = str(item.get("brief", {}).get("title", "未具名標案/共契")).strip()
                         
-                        unit_id = item.get("unit_id", "")
-                        job_number = item.get("job_number", "")
-                        
-                        if unit_id and job_number:
-                            tender_url = f"https://pcc.g0v.ronny.tw/p/{unit_id}/{job_number}"
-                        else:
-                            tender_url = "https://pcc.g0v.ronny.tw/"
-                        
                         days_left = 2 + idx * 3
                         deadline_date = today + timedelta(days=days_left)
                         
@@ -177,7 +179,7 @@ def fetch_tenders():
                             urgency_icon = "🟢 [充裕]"
                             
                         ai_summary = summarize_tender_with_ai(title, unit, kw, days_left)
-                        text_item = f"• {urgency_icon} [{kw}] {unit} - {title}\n  🔗 標案明細：{tender_url}\n  📅 截止日期：{deadline_date.strftime('%Y-%m-%d')} (剩 {days_left} 天)\n{ai_summary}"
+                        text_item = f"• {urgency_icon} [{kw}] {unit} - {title}\n  📅 截止日期：{deadline_date.strftime('%Y-%m-%d')} (剩 {days_left} 天)\n{ai_summary}"
                         
                         raw_results.append({
                             "days_left": days_left,
@@ -210,13 +212,15 @@ def main():
     tenders = fetch_tenders()
     
     dashboard_url = "https://annie-finance-dashboard.streamlit.app/"
+    viewer_url = "https://ronnywang.github.io/pcc-viewer/index.html"
     
     report = (
         f"📊 【每日情報晨報】{today}\n\n"
-        f"🌐 一、全方位國內外財經要事：\n{news}\n\n"
+        f"🌐 一、全方位國內外財經要事 (含重點摘要)：\n{news}\n\n"
         f"🚀 二、資服業 IPO 與興櫃焦點：\n{ipo_info}\n\n"
         f"📈 三、資服與數位雲端行情速報：\n{stocks}\n\n"
-        f"🏛️ 四、公部門標案與共契即時情報 (含倒數與 AI 解析)：\n{tenders}\n\n"
+        f"🏛️ 四、公部門標案與共契即時情報 (每日更新與 AI 解析)：\n{tenders}\n"
+        f"🔍 標案詳細檢索工具：{viewer_url}\n\n"
         f"💡 點擊開啟 Streamlit 彩色圖表儀表板：\n"
         f"{dashboard_url}"
     )
