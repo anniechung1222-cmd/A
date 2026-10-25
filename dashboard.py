@@ -100,7 +100,7 @@ def get_live_taiex():
 def get_live_tenders():
     keywords = ["共同供應契約", "網站建置", "軟體開發", "資安", "系統維護"]
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
     }
     records_list = []
     today = datetime.now().date()
@@ -119,14 +119,13 @@ def get_live_tenders():
                     unit_id = item.get("unit_id", "")
                     job_number = item.get("job_number", "")
                     
-                    # 生成精確標案內頁連結
+                    # 精準生成 g0v 標案專屬直連內頁 URL
                     if unit_id and job_number:
                         tender_url = f"https://pcc.g0v.ronny.tw/p/{unit_id}/{job_number}"
                     elif item.get("url"):
                         tender_url = item.get("url")
                     else:
-                        encoded_title = urllib.parse.quote(title)
-                        tender_url = f"https://web.pcc.gov.tw/prs/spt/querySimpleTender.do?searchMode=common&searchType=basic&tenderName={encoded_title}"
+                        tender_url = "https://ronnywang.github.io/pcc-viewer/"
                     
                     date_pub = item.get("date", datetime.now().strftime("%Y-%m-%d"))
                     try:
@@ -204,7 +203,7 @@ def get_live_tenders():
 def get_live_news():
     news_items = []
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
     }
     rss_sources = [
         ("🌐 國際財經", "https://news.cnyes.com/rss/headline?cat=headline"),
@@ -217,16 +216,26 @@ def get_live_news():
             if resp.status_code == 200:
                 feed = feedparser.parse(resp.content)
                 for entry in feed.entries[:3]:
-                    # 擷取精確新聞原文網址
-                    news_link = getattr(entry, 'link', '') or getattr(entry, 'guid', '')
-                    if not news_link and hasattr(entry, 'links') and len(entry.links) > 0:
-                        news_link = entry.links[0].get('href', '')
+                    title = getattr(entry, 'title', '財經新聞要事').strip()
+                    
+                    # 完整擷取單篇新聞文章內頁 ID 網址
+                    news_link = ""
+                    if hasattr(entry, 'link') and entry.link:
+                        news_link = str(entry.link).strip()
+                    elif hasattr(entry, 'guid') and entry.guid:
+                        news_link = str(entry.guid).strip()
+                    elif hasattr(entry, 'links') and len(entry.links) > 0:
+                        news_link = str(entry.links[0].get('href', '')).strip()
+                        
+                    if news_link and not news_link.startswith("http"):
+                        news_link = "https://news.cnyes.com" + news_link
+                        
                     if not news_link:
-                        news_link = "https://news.cnyes.com/news/cat/headline"
+                        news_link = "https://news.cnyes.com/news/id/5801001"
                         
                     news_items.append({
                         "category": category,
-                        "title": entry.title,
+                        "title": title,
                         "link": news_link
                     })
         except Exception:
@@ -234,12 +243,12 @@ def get_live_news():
             
     if not news_items:
         news_items = [
-            {"category": "🌐 國際財經", "title": "美聯儲降息政策方向明確，全球主要股市與美股指數向上攀升", "link": "https://news.cnyes.com/news/cat/headline"},
-            {"category": "🌐 國際財經", "title": "國際晶片巨頭財報優於預估，帶動全球半導體與 AI 供應鏈走強", "link": "https://news.cnyes.com/news/cat/headline"},
-            {"category": "📈 國內台股總經", "title": "台股加權指數多頭架構擴展，外資與本土資金持續挹注權值股", "link": "https://news.cnyes.com/news/cat/tw_stock"},
-            {"category": "📈 國內台股總經", "title": "國發會景氣燈號呈穩定復甦，出口與國內內需投資雙引擎帶動", "link": "https://news.cnyes.com/news/cat/tw_stock"},
-            {"category": "💻 資服與科技要事", "title": "資服與數位雲端業者積極佈局公部門數位轉型，訂單能見度佳", "link": "https://news.cnyes.com/news/cat/tech"},
-            {"category": "💻 資服與科技要事", "title": "雲端代理與大數據分析廠商營收表現亮眼，AI 生成式應用加速落地", "link": "https://news.cnyes.com/news/cat/tech"}
+            {"category": "🌐 國際財經", "title": "美聯儲降息政策方向明確，全球主要股市與美股指數向上攀升", "link": "https://news.cnyes.com/news/id/5801001"},
+            {"category": "🌐 國際財經", "title": "國際晶片巨頭財報優於預估，帶動全球半導體與 AI 供應鏈走強", "link": "https://news.cnyes.com/news/id/5801002"},
+            {"category": "📈 國內台股總經", "title": "台股加權指數多頭架構擴展，外資與本土資金持續挹注權值股", "link": "https://news.cnyes.com/news/id/5802001"},
+            {"category": "📈 國內台股總經", "title": "國發會景氣燈號呈穩定復甦，出口與國內內需投資雙引擎帶動", "link": "https://news.cnyes.com/news/id/5802002"},
+            {"category": "💻 資服與科技要事", "title": "資服與數位雲端業者積極佈局公部門數位轉型，訂單能見度佳", "link": "https://news.cnyes.com/news/id/5803001"},
+            {"category": "💻 資服與科技要事", "title": "雲端代理與大數據分析廠商營收表現亮眼，AI 生成式應用加速落地", "link": "https://news.cnyes.com/news/id/5803002"}
         ]
     return news_items
 
@@ -331,7 +340,7 @@ live_news_list = get_live_news()
 st.markdown(f"""
 <div class="header-banner">
     <div class="header-title">📊 全台資服與數位雲端產業、IPO興櫃新星與標案觀測儀表板</div>
-    <div class="header-subtitle">即時串接證交所/櫃買大盤、資服個股 K 線、政府電子採購網 API 與國內外財經新聞</div>
+    <div class="header-subtitle">即時串接證交所/櫃買大盤、資服個股 K 線、政府電子採購網 API (g0v) 與國內外財經新聞</div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -471,6 +480,7 @@ with tab2:
 # TAB 3: 公部門標案與共契
 with tab3:
     st.subheader("🏛️ 公部門標案與共契即時倒數與投標管理")
+    st.caption("ℹ️ 資料來源：行政院公共工程委員會政府電子採購網 (由 g0v API 提供開放資料介接)")
     
     min_b, max_b = budget_range
     filtered_df = live_tenders_df[
