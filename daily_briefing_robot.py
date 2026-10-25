@@ -45,16 +45,21 @@ def fetch_news():
                 feed = feedparser.parse(resp.content)
                 for entry in feed.entries[:2]:
                     title = entry.title.strip()
-                    link = entry.link.strip()
-                    news_items.append(f"• [{category}] {title}\n  🔗 {link}")
+                    news_link = getattr(entry, 'link', '') or getattr(entry, 'guid', '')
+                    if not news_link and hasattr(entry, 'links') and len(entry.links) > 0:
+                        news_link = entry.links[0].get('href', '')
+                    if not news_link:
+                        news_link = "https://news.cnyes.com/news/cat/headline"
+                        
+                    news_items.append(f"• [{category}] {title}\n  🔗 {news_link}")
         except Exception:
             pass
             
     if not news_items:
         news_items = [
-            "• [🌐 國際財經] 美聯儲降息預期升溫，全球股市與美股市場強勢上揚\n  🔗 https://news.cnyes.com/",
-            "• [📈 國內總經與台股] 加權指數多頭架構延伸，企業資本支出與內需雙動能熱絡\n  🔗 https://news.cnyes.com/",
-            "• [💻 資服與科技要事] 資服與數位雲端業者搶攻公部門數位轉型，訂單能見度佳\n  🔗 https://news.cnyes.com/"
+            "• [🌐 國際財經] 美聯儲降息預期升溫，全球股市與美股市場強勢上揚\n  🔗 https://news.cnyes.com/news/cat/headline",
+            "• [📈 國內總經與台股] 加權指數多頭架構延伸，企業資本支出與內需雙動能熱絡\n  🔗 https://news.cnyes.com/news/cat/tw_stock",
+            "• [💻 資服與科技要事] 資服與數位雲端業者搶攻公部門數位轉型，訂單能見度佳\n  🔗 https://news.cnyes.com/news/cat/tech"
         ]
     return "\n\n".join(news_items)
 
@@ -75,7 +80,7 @@ def fetch_stocks():
                 price = float(hist['Close'].iloc[-1])
                 prev = float(hist['Close'].iloc[-2])
                 pct = ((price - prev) / prev) * 100
-                code_clean = ticker.split('.')
+                code_clean = ticker.split('.')[0]
                 stock_results.append({
                     "name": name, 
                     "code": code_clean, 
@@ -115,8 +120,14 @@ def fetch_ipo_news():
         matched_news = []
         for entry in feed.entries:
             title = entry.title.strip()
+            news_link = getattr(entry, 'link', '') or getattr(entry, 'guid', '')
+            if not news_link and hasattr(entry, 'links') and len(entry.links) > 0:
+                news_link = entry.links[0].get('href', '')
+            if not news_link:
+                news_link = "https://news.cnyes.com/news/cat/tw_stock_news"
+                
             if any(kw in title for kw in ipo_keywords):
-                matched_news.append(f"• 🚀 {title}\n  🔗 {entry.link.strip()}")
+                matched_news.append(f"• 🚀 {title}\n  🔗 {news_link}")
                 if len(matched_news) >= 2:
                     break
                     
@@ -149,6 +160,14 @@ def fetch_tenders():
                         unit = str(item.get("unit_name", "公部門機關")).strip()
                         title = str(item.get("brief", {}).get("title", "未具名標案/共契")).strip()
                         
+                        unit_id = item.get("unit_id", "")
+                        job_number = item.get("job_number", "")
+                        
+                        if unit_id and job_number:
+                            tender_url = f"https://pcc.g0v.ronny.tw/p/{unit_id}/{job_number}"
+                        else:
+                            tender_url = item.get("url", "https://pcc.g0v.ronny.tw/")
+                        
                         days_left = 2 + idx * 3
                         deadline_date = today + timedelta(days=days_left)
                         
@@ -160,7 +179,7 @@ def fetch_tenders():
                             urgency_icon = "🟢 [充裕]"
                             
                         ai_summary = summarize_tender_with_ai(title, unit, kw, days_left)
-                        text_item = f"• {urgency_icon} [{kw}] {unit} - {title}\n  📅 截止日期：{deadline_date.strftime('%Y-%m-%d')} (剩 {days_left} 天)\n{ai_summary}"
+                        text_item = f"• {urgency_icon} [{kw}] {unit} - {title}\n  🔗 標案明細：{tender_url}\n  📅 截止日期：{deadline_date.strftime('%Y-%m-%d')} (剩 {days_left} 天)\n{ai_summary}"
                         
                         raw_results.append({
                             "days_left": days_left,
